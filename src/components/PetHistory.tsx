@@ -1,0 +1,613 @@
+import React, { useState } from 'react';
+import { useApp } from '../contexts/AppContext';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Badge } from './ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { 
+  Calendar, 
+  Clock, 
+  FileText, 
+  Heart, 
+  Activity, 
+  Pill, 
+  Syringe, 
+  AlertCircle, 
+  Plus, 
+  Search, 
+  Filter,
+  User,
+  Stethoscope,
+  ClipboardList
+} from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Textarea } from './ui/textarea';
+import { Progress } from './ui/progress';
+
+interface HistoryEntry {
+  id: string;
+  petId: string;
+  petName: string;
+  date: string;
+  type: 'appointment' | 'vaccination' | 'prescription' | 'health_record' | 'emergency' | 'note';
+  title: string;
+  description: string;
+  veterinarian: string;
+  status: 'completed' | 'scheduled' | 'cancelled' | 'active';
+  category: string;
+  attachments?: string[];
+  cost?: number;
+  followUpDate?: string;
+  priority: 'low' | 'medium' | 'high';
+}
+
+interface Pet {
+  id: string;
+  name: string;
+  species: string;
+  breed: string;
+  age: string;
+  weight: string;
+  birthDate: string;
+  microchipId?: string;
+  owner: string;
+  emergencyContact: string;
+}
+
+export function PetHistory() {
+  const { user } = useApp();
+  const [selectedPet, setSelectedPet] = useState('1');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [dateRange, setDateRange] = useState('all');
+  const [isAddNoteOpen, setIsAddNoteOpen] = useState(false);
+  const [newNote, setNewNote] = useState({
+    title: '',
+    description: '',
+    category: '',
+    priority: 'medium' as const
+  });
+
+  // Mock data - in real app, this would come from API
+  const pets: Pet[] = [
+    { 
+      id: '1', 
+      name: 'Buddy', 
+      species: 'Dog', 
+      breed: 'Golden Retriever', 
+      age: '3 years',
+      weight: '65 lbs',
+      birthDate: '2021-03-15',
+      microchipId: 'MC123456789',
+      owner: 'John Smith',
+      emergencyContact: '(555) 123-4567'
+    },
+    { 
+      id: '2', 
+      name: 'Whiskers', 
+      species: 'Cat', 
+      breed: 'Persian', 
+      age: '2 years',
+      weight: '8 lbs',
+      birthDate: '2022-08-20',
+      microchipId: 'MC987654321',
+      owner: 'Jane Doe',
+      emergencyContact: '(555) 987-6543'
+    },
+    { 
+      id: '3', 
+      name: 'Max', 
+      species: 'Dog', 
+      breed: 'German Shepherd', 
+      age: '5 years',
+      weight: '80 lbs',
+      birthDate: '2019-11-10',
+      owner: 'Mike Johnson',
+      emergencyContact: '(555) 456-7890'
+    },
+  ];
+
+  const historyEntries: HistoryEntry[] = [
+    {
+      id: '1',
+      petId: '1',
+      petName: 'Buddy',
+      date: '2024-11-08',
+      type: 'appointment',
+      title: 'Routine Checkup',
+      description: 'Annual wellness examination. All vitals normal. Weight: 65 lbs. Recommended continued exercise routine.',
+      veterinarian: 'Dr. Smith',
+      status: 'completed',
+      category: 'Wellness',
+      cost: 85.00,
+      priority: 'low'
+    },
+    {
+      id: '2',
+      petId: '1',
+      petName: 'Buddy',
+      date: '2024-11-01',
+      type: 'prescription',
+      title: 'Anti-inflammatory Medication',
+      description: 'Rimadyl 75mg prescribed for joint pain. Take twice daily with food for 14 days.',
+      veterinarian: 'Dr. Smith',
+      status: 'active',
+      category: 'Treatment',
+      cost: 45.99,
+      followUpDate: '2024-11-15',
+      priority: 'medium'
+    },
+    {
+      id: '3',
+      petId: '1',
+      petName: 'Buddy',
+      date: '2024-10-15',
+      type: 'vaccination',
+      title: 'Annual DHPP Vaccination',
+      description: 'DHPP booster vaccination administered. No adverse reactions observed. Next due: October 2025.',
+      veterinarian: 'Dr. Smith',
+      status: 'completed',
+      category: 'Prevention',
+      cost: 35.00,
+      priority: 'low'
+    },
+    {
+      id: '4',
+      petId: '1',
+      petName: 'Buddy',
+      date: '2024-09-22',
+      type: 'emergency',
+      title: 'Laceration on Paw',
+      description: 'Minor cut on right front paw from glass. Cleaned, disinfected, and bandaged. Antibiotics prescribed.',
+      veterinarian: 'Dr. Wilson',
+      status: 'completed',
+      category: 'Emergency',
+      cost: 125.00,
+      priority: 'high'
+    },
+    {
+      id: '5',
+      petId: '1',
+      petName: 'Buddy',
+      date: '2024-08-30',
+      type: 'health_record',
+      title: 'Dental Cleaning',
+      description: 'Professional dental cleaning performed under anesthesia. Two minor extractions needed. Recovery excellent.',
+      veterinarian: 'Dr. Johnson',
+      status: 'completed',
+      category: 'Dental',
+      cost: 450.00,
+      priority: 'medium'
+    },
+    {
+      id: '6',
+      petId: '1',
+      petName: 'Buddy',
+      date: '2024-07-18',
+      type: 'note',
+      title: 'Behavior Training Progress',
+      description: 'Completed 6-week basic obedience course. Showing significant improvement in response to commands.',
+      veterinarian: 'Dr. Smith',
+      status: 'completed',
+      category: 'Behavioral',
+      priority: 'low'
+    }
+  ];
+
+  const selectedPetData = pets.find(pet => pet.id === selectedPet);
+  const filteredEntries = historyEntries
+    .filter(entry => entry.petId === selectedPet)
+    .filter(entry => {
+      const matchesSearch = entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           entry.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = typeFilter === 'all' || entry.type === typeFilter;
+      
+      let matchesDate = true;
+      if (dateRange !== 'all') {
+        const entryDate = new Date(entry.date);
+        const now = new Date();
+        switch (dateRange) {
+          case 'week':
+            matchesDate = (now.getTime() - entryDate.getTime()) <= 7 * 24 * 60 * 60 * 1000;
+            break;
+          case 'month':
+            matchesDate = (now.getTime() - entryDate.getTime()) <= 30 * 24 * 60 * 60 * 1000;
+            break;
+          case 'year':
+            matchesDate = (now.getTime() - entryDate.getTime()) <= 365 * 24 * 60 * 60 * 1000;
+            break;
+        }
+      }
+      
+      return matchesSearch && matchesType && matchesDate;
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'appointment': return <Stethoscope className="w-4 h-4" />;
+      case 'vaccination': return <Syringe className="w-4 h-4" />;
+      case 'prescription': return <Pill className="w-4 h-4" />;
+      case 'health_record': return <Heart className="w-4 h-4" />;
+      case 'emergency': return <AlertCircle className="w-4 h-4" />;
+      case 'note': return <FileText className="w-4 h-4" />;
+      default: return <ClipboardList className="w-4 h-4" />;
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'appointment': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'vaccination': return 'bg-green-100 text-green-800 border-green-200';
+      case 'prescription': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'health_record': return 'bg-red-100 text-red-800 border-red-200';
+      case 'emergency': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'note': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-500';
+      case 'medium': return 'bg-yellow-500';
+      case 'low': return 'bg-green-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const handleAddNote = () => {
+    const note: HistoryEntry = {
+      id: Date.now().toString(),
+      petId: selectedPet,
+      petName: selectedPetData?.name || '',
+      date: new Date().toISOString().split('T')[0],
+      type: 'note',
+      title: newNote.title,
+      description: newNote.description,
+      veterinarian: user?.name || 'Current User',
+      status: 'completed',
+      category: newNote.category,
+      priority: newNote.priority
+    };
+
+    console.log('Adding note:', note);
+    setIsAddNoteOpen(false);
+    setNewNote({
+      title: '',
+      description: '',
+      category: '',
+      priority: 'medium'
+    });
+  };
+
+  const getHealthScore = () => {
+    const recentEntries = historyEntries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      return entryDate >= sixMonthsAgo && entry.petId === selectedPet;
+    });
+
+    const emergencyCount = recentEntries.filter(e => e.type === 'emergency').length;
+    const vaccinationCount = recentEntries.filter(e => e.type === 'vaccination').length;
+    const checkupCount = recentEntries.filter(e => e.type === 'appointment' && e.category === 'Wellness').length;
+
+    let score = 85;
+    score -= emergencyCount * 10;
+    score += vaccinationCount * 5;
+    score += checkupCount * 3;
+
+    return Math.max(Math.min(score, 100), 0);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Pet History</h1>
+          <p className="text-gray-600 mt-1">Comprehensive medical and care history</p>
+        </div>
+        <Dialog open={isAddNoteOpen} onOpenChange={setIsAddNoteOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Note
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Note to History</DialogTitle>
+              <DialogDescription>
+                Add a note or observation to {selectedPetData?.name}'s history.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="noteTitle">Title</Label>
+                <Input
+                  id="noteTitle"
+                  value={newNote.title}
+                  onChange={(e) => setNewNote(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Brief title for the note"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="noteCategory">Category</Label>
+                  <Input
+                    id="noteCategory"
+                    value={newNote.category}
+                    onChange={(e) => setNewNote(prev => ({ ...prev, category: e.target.value }))}
+                    placeholder="e.g., Behavioral, Training"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="notePriority">Priority</Label>
+                  <Select value={newNote.priority} onValueChange={(value: any) => setNewNote(prev => ({ ...prev, priority: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="noteDescription">Description</Label>
+                <Textarea
+                  id="noteDescription"
+                  value={newNote.description}
+                  onChange={(e) => setNewNote(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Detailed description of the note"
+                  rows={4}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button variant="outline" onClick={() => setIsAddNoteOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddNote} className="bg-blue-600 hover:bg-blue-700">
+                Add Note
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Pet Selection */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex gap-4 items-center">
+            <div className="flex-1">
+              <Label htmlFor="petSelect">Select Pet</Label>
+              <Select value={selectedPet} onValueChange={setSelectedPet}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {pets.map(pet => (
+                    <SelectItem key={pet.id} value={pet.id}>
+                      {pet.name} - {pet.species} ({pet.breed})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pet Overview */}
+      {selectedPetData && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                Pet Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Name</p>
+                  <p className="text-sm text-gray-600">{selectedPetData.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Species</p>
+                  <p className="text-sm text-gray-600">{selectedPetData.species}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Breed</p>
+                  <p className="text-sm text-gray-600">{selectedPetData.breed}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Age</p>
+                  <p className="text-sm text-gray-600">{selectedPetData.age}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Weight</p>
+                  <p className="text-sm text-gray-600">{selectedPetData.weight}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Birth Date</p>
+                  <p className="text-sm text-gray-600">{new Date(selectedPetData.birthDate).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Owner</p>
+                  <p className="text-sm text-gray-600">{selectedPetData.owner}</p>
+                </div>
+                {selectedPetData.microchipId && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Microchip</p>
+                    <p className="text-sm text-gray-600">{selectedPetData.microchipId}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Health Score
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600 mb-2">{getHealthScore()}</div>
+                <Progress value={getHealthScore()} className="mb-4" />
+                <p className="text-sm text-gray-600">
+                  Based on recent medical history and preventive care
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Filters and Search */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex gap-4 flex-wrap">
+            <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+              <Search className="w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search history..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="border-0 shadow-none focus-visible:ring-0"
+              />
+            </div>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All types</SelectItem>
+                <SelectItem value="appointment">Appointments</SelectItem>
+                <SelectItem value="vaccination">Vaccinations</SelectItem>
+                <SelectItem value="prescription">Prescriptions</SelectItem>
+                <SelectItem value="health_record">Health Records</SelectItem>
+                <SelectItem value="emergency">Emergencies</SelectItem>
+                <SelectItem value="note">Notes</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All time" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All time</SelectItem>
+                <SelectItem value="week">Last week</SelectItem>
+                <SelectItem value="month">Last month</SelectItem>
+                <SelectItem value="year">Last year</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* History Timeline */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-gray-900">
+          Medical History Timeline ({filteredEntries.length} entries)
+        </h2>
+        
+        {filteredEntries.map((entry, index) => (
+          <Card key={entry.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                {/* Timeline indicator */}
+                <div className="flex flex-col items-center">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getTypeColor(entry.type)}`}>
+                    {getTypeIcon(entry.type)}
+                  </div>
+                  {index < filteredEntries.length - 1 && (
+                    <div className="w-px h-8 bg-gray-200 mt-4"></div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium text-gray-900">{entry.title}</h3>
+                      <div className={`w-2 h-2 rounded-full ${getPriorityColor(entry.priority)}`}></div>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(entry.date).toLocaleDateString()}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge className={getTypeColor(entry.type)}>
+                      {entry.type.replace('_', ' ').charAt(0).toUpperCase() + entry.type.replace('_', ' ').slice(1)}
+                    </Badge>
+                    <Badge variant="outline">{entry.category}</Badge>
+                    {entry.cost && (
+                      <Badge variant="outline">${entry.cost}</Badge>
+                    )}
+                  </div>
+
+                  <p className="text-gray-600 text-sm mb-3">{entry.description}</p>
+
+                  <div className="flex justify-between items-center text-sm text-gray-500">
+                    <div className="flex items-center gap-4">
+                      <span>Dr. {entry.veterinarian}</span>
+                      {entry.followUpDate && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          Follow-up: {new Date(entry.followUpDate).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm">
+                        View Details
+                      </Button>
+                      {(user?.role === 'veterinarian' || user?.role === 'admin') && (
+                        <Button variant="ghost" size="sm">
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+
+        {filteredEntries.length === 0 && (
+          <Card>
+            <CardContent className="text-center py-12">
+              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No history entries found</h3>
+              <p className="text-gray-600 mb-4">
+                {searchTerm || typeFilter !== 'all' || dateRange !== 'all'
+                  ? 'Try adjusting your search criteria'
+                  : `No history entries found for ${selectedPetData?.name}`}
+              </p>
+              <Button onClick={() => setIsAddNoteOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Add First Note
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}

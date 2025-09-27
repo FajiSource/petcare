@@ -1,0 +1,113 @@
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
+import { IAdminTotals, INewPet, INewRecord, INewUser, INewVetUser } from "../types"
+import { addUser, addVetUser, deleteUser, getAllAdmins, getAllVets, getOwners, getUsers, updateStatus } from "../../services/user-service"
+import { QUERY_KEYS } from "./queryKeys"
+import { getAdminTotals } from "../../services/dashboard-service"
+import { addRecord, getAllRecords } from "../../services/veterinarian-services"
+import { addNewPet, getPets } from "../../services/pet-service"
+
+
+export const useAddNewUser = () => {
+    return useMutation({
+        mutationFn: async (data: INewUser) => addUser(data)
+    })
+}
+
+
+export const useAddNewVetUser = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: INewVetUser) => addVetUser(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_VETS] });
+        }
+    })
+}
+
+export const useAdminDashboardTotals = () => {
+    return useQuery<IAdminTotals>({
+        queryKey: [QUERY_KEYS.ADMIN_DB_TOTALS],
+        queryFn: getAdminTotals
+    });
+}
+
+export const useGetAllAdmins = () => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.GET_ALL_ADMINS],
+        queryFn: getAllAdmins
+    });
+};
+export const useGetAllUsers = () => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.GET_ALL_USERS],
+        queryFn: getUsers
+    });
+};
+export const useGetAllVets = () => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.GET_ALL_VETS],
+        queryFn: getAllVets
+    });
+};
+
+export const useGetOwners = () => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.GET_ALL_OWNERS],
+        queryFn: getOwners
+    });
+};
+
+
+export const useAddRecord = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (data: INewRecord) => addRecord(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_RECORDS] })
+        }
+    })
+}
+export const useGetAllRecords = () => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.GET_ALL_RECORDS],
+        queryFn: getAllRecords
+    });
+};
+
+export const useDeleteUser = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ userID }: { userID: string }) => deleteUser({ userID }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_ADMINS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_VETS] });
+        }
+    });
+};
+
+export const useUpdateUserStatus = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ userID,status }: { userID: string,status:string }) => updateStatus({ userID,status }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_ADMINS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_VETS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_USERS] });
+        }
+    });
+};
+export const useGetAllPets = () => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.GET_PETS],
+        queryFn: getPets
+    });
+};
+export const useAddNewPet = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (data: INewPet) => addNewPet(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_PETS] });
+        }
+    })
+}

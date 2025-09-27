@@ -74,7 +74,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [currentView, setCurrentView] = useState('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
+
   useEffect(() => {
     // Check for saved auth state
     const savedUser = localStorage.getItem('petcare_user');
@@ -308,6 +308,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setClinics([]);
     setCurrentView('dashboard');
     localStorage.removeItem('petcare_user');
+    localStorage.removeItem('authToken');
+
   };
 
   const addPet = (pet: Pet) => {

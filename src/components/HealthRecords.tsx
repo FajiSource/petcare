@@ -10,11 +10,11 @@ import { FormInput } from './FormInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { toast } from 'sonner@2.0.3';
-import { 
-  FileText, 
-  Plus, 
-  Calendar, 
-  User, 
+import {
+  FileText,
+  Plus,
+  Calendar,
+  User,
   Heart,
   Activity,
   Thermometer,
@@ -22,115 +22,32 @@ import {
   Eye,
   Download
 } from 'lucide-react';
-
-interface HealthRecord {
-  id: string;
-  petId: string;
-  petName: string;
-  type: 'checkup' | 'diagnosis' | 'treatment' | 'test' | 'surgery' | 'emergency';
-  title: string;
-  date: string;
-  veterinarian: string;
-  clinic: string;
-  diagnosis?: string;
-  treatment?: string;
-  medications?: string;
-  notes: string;
-  followUpRequired: boolean;
-  followUpDate?: string;
-  attachments?: string[];
-  vitals?: {
-    weight: number;
-    temperature: number;
-    heartRate: number;
-    respiratoryRate: number;
-  };
-}
+import { useAddRecord, usegetAllVetRecords } from '../lib/react-query/QueriesAndMutations';
+import { INewHealthRecord } from '../lib/types';
 
 export function HealthRecords() {
   const { pets } = useApp();
+  const { data: healthRecords, isPending: isGettingHealthRecords, refetch: loadRecords } = usegetAllVetRecords()
+  const { mutateAsync: createNewRecord, isPending: isAddingNewRecord } = useAddRecord()
   const [selectedPet, setSelectedPet] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [records, setRecords] = useState<HealthRecord[]>([
-    {
-      id: '1',
-      petId: '1',
-      petName: 'Buddy',
-      type: 'checkup',
-      title: 'Annual Health Examination',
-      date: '2025-08-10',
-      veterinarian: 'Dr. Sarah Johnson',
-      clinic: 'PetCare Veterinary Clinic',
-      diagnosis: 'Healthy, minor dental tartar buildup',
-      treatment: 'Dental cleaning recommended',
-      medications: 'None prescribed',
-      notes: 'Overall excellent health. Weight is ideal for breed and age. Recommend dental cleaning within 3 months.',
-      followUpRequired: true,
-      followUpDate: '2025-11-10',
-      vitals: {
-        weight: 65,
-        temperature: 101.2,
-        heartRate: 80,
-        respiratoryRate: 20
-      }
-    },
-    {
-      id: '2',
-      petId: '2',
-      petName: 'Whiskers',
-      type: 'treatment',
-      title: 'Upper Respiratory Infection Treatment',
-      date: '2025-08-08',
-      veterinarian: 'Dr. Michael Chen',
-      clinic: 'Animal Health Center',
-      diagnosis: 'Upper respiratory infection',
-      treatment: 'Antibiotic course, rest',
-      medications: 'Amoxicillin 250mg twice daily for 10 days',
-      notes: 'Patient presented with sneezing and nasal discharge. Responding well to treatment.',
-      followUpRequired: true,
-      followUpDate: '2025-08-18',
-      vitals: {
-        weight: 12,
-        temperature: 102.1,
-        heartRate: 180,
-        respiratoryRate: 30
-      }
-    },
-    {
-      id: '3',
-      petId: '1',
-      petName: 'Buddy',
-      type: 'surgery',
-      title: 'Dental Cleaning and Tooth Extraction',
-      date: '2025-08-05',
-      veterinarian: 'Dr. Sarah Johnson',
-      clinic: 'PetCare Veterinary Clinic',
-      diagnosis: 'Severe dental disease, infected premolar',
-      treatment: 'Dental cleaning, extraction of infected tooth',
-      medications: 'Pain medication, antibiotics post-surgery',
-      notes: 'Surgery completed successfully. Patient recovered well from anesthesia.',
-      followUpRequired: true,
-      followUpDate: '2025-08-12'
-    }
-  ]);
 
-  const [newRecord, setNewRecord] = useState({
-    petId: '',
-    type: 'checkup' as const,
+
+  const [newRecord, setNewRecord] = useState<INewHealthRecord>({
+    pet_id: 0,
+    type: 'checkup',
     title: '',
     date: '',
-    veterinarian: '',
-    clinic: '',
     diagnosis: '',
     treatment: '',
     medications: '',
     notes: '',
-    followUpRequired: false,
-    followUpDate: '',
-    weight: '',
-    temperature: '',
-    heartRate: '',
-    respiratoryRate: ''
+    weight: 0,
+    temperature: 0,
+    heart_rate: 0,
+    respiratory_rate: 0,
+    follow_up_required: false,
+    follow_up_date: null,
   });
 
   const recordTypes = [
@@ -161,63 +78,36 @@ export function HealthRecords() {
     }
   };
 
-  const handleAddRecord = () => {
-    if (!newRecord.petId || !newRecord.title || !newRecord.date) {
-      return;
+  const handleAddRecord = async () => {
+    try {
+      await createNewRecord(newRecord);
+      setNewRecord({
+        pet_id: 0,
+        type: 'checkup',
+        title: '',
+        date: '',
+        diagnosis: '',
+        treatment: '',
+        medications: '',
+        notes: '',
+        weight: 0,
+        temperature: 0,
+        heart_rate: 0,
+        respiratory_rate: 0,
+        follow_up_required: false,
+        follow_up_date: null,
+      });
+      setIsDialogOpen(false);
+      toast.success(`New Health record added`);
+    } catch (error) {
+      console.log(error)
     }
 
-    const selectedPetData = pets.find(pet => pet.id === newRecord.petId);
-    if (!selectedPetData) return;
-
-    const record: HealthRecord = {
-      id: Date.now().toString(),
-      petId: newRecord.petId,
-      petName: selectedPetData.name,
-      type: newRecord.type,
-      title: newRecord.title,
-      date: newRecord.date,
-      veterinarian: newRecord.veterinarian,
-      clinic: newRecord.clinic,
-      diagnosis: newRecord.diagnosis,
-      treatment: newRecord.treatment,
-      medications: newRecord.medications,
-      notes: newRecord.notes,
-      followUpRequired: newRecord.followUpRequired,
-      followUpDate: newRecord.followUpDate,
-      vitals: {
-        weight: parseFloat(newRecord.weight) || 0,
-        temperature: parseFloat(newRecord.temperature) || 0,
-        heartRate: parseInt(newRecord.heartRate) || 0,
-        respiratoryRate: parseInt(newRecord.respiratoryRate) || 0
-      }
-    };
-
-    setRecords(prev => [record, ...prev]);
-    setNewRecord({
-      petId: '',
-      type: 'checkup',
-      title: '',
-      date: '',
-      veterinarian: '',
-      clinic: '',
-      diagnosis: '',
-      treatment: '',
-      medications: '',
-      notes: '',
-      followUpRequired: false,
-      followUpDate: '',
-      weight: '',
-      temperature: '',
-      heartRate: '',
-      respiratoryRate: ''
-    });
-    setIsDialogOpen(false);
-    toast.success(`Health record added for ${selectedPetData.name}`);
   };
 
-  const filteredRecords = selectedPet === 'all' 
-    ? records 
-    : records.filter(record => record.petId === selectedPet);
+  const filteredRecords = selectedPet === 'all'
+    ? healthRecords
+    : healthRecords.filter(record => record.pet_id === selectedPet);
 
   return (
     <div className="space-y-6">
@@ -227,7 +117,7 @@ export function HealthRecords() {
           <h1 className="text-2xl font-semibold text-gray-900">Health Records</h1>
           <p className="text-gray-600 mt-1">Comprehensive medical history for your pets</p>
         </div>
-        
+
         <div className="flex gap-2">
           <Select value={selectedPet} onValueChange={setSelectedPet}>
             <SelectTrigger className="w-48">
@@ -240,7 +130,7 @@ export function HealthRecords() {
               ))}
             </SelectContent>
           </Select>
-          
+
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -252,27 +142,31 @@ export function HealthRecords() {
               <DialogHeader>
                 <DialogTitle>Add New Health Record</DialogTitle>
               </DialogHeader>
-              
+
               <Tabs defaultValue="basic" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="basic">Basic Information</TabsTrigger>
                   <TabsTrigger value="medical">Medical Details</TabsTrigger>
                   <TabsTrigger value="vitals">Vitals & Follow-up</TabsTrigger>
                 </TabsList>
-                
+
+                {/* BASIC */}
                 <TabsContent value="basic" className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium">Select Pet</label>
-                      <Select value={newRecord.petId} onValueChange={(value) => 
-                        setNewRecord(prev => ({ ...prev, petId: value }))
-                      }>
+                      <Select
+                        value={String(newRecord.pet_id)}
+                        onValueChange={(value) =>
+                          setNewRecord((prev) => ({ ...prev, pet_id: Number(value) }))
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Choose a pet" />
                         </SelectTrigger>
                         <SelectContent>
-                          {pets.map(pet => (
-                            <SelectItem key={pet.id} value={pet.id}>
+                          {pets.map((pet) => (
+                            <SelectItem key={pet.id} value={String(pet.id)}>
                               {pet.name} ({pet.species})
                             </SelectItem>
                           ))}
@@ -282,14 +176,17 @@ export function HealthRecords() {
 
                     <div>
                       <label className="text-sm font-medium">Record Type</label>
-                      <Select value={newRecord.type} onValueChange={(value: any) => 
-                        setNewRecord(prev => ({ ...prev, type: value }))
-                      }>
+                      <Select
+                        value={newRecord.type}
+                        onValueChange={(value: string) =>
+                          setNewRecord((prev) => ({ ...prev, type: value }))
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {recordTypes.map(type => (
+                          {recordTypes.map((type) => (
                             <SelectItem key={type.value} value={type.value}>
                               {type.label}
                             </SelectItem>
@@ -303,7 +200,9 @@ export function HealthRecords() {
                       name="title"
                       label="Record Title"
                       value={newRecord.title}
-                      onChange={(e) => setNewRecord(prev => ({ ...prev, title: e.target.value }))}
+                      onChange={(e) =>
+                        setNewRecord((prev) => ({ ...prev, title: e.target.value }))
+                      }
                       placeholder="e.g., Annual Health Examination"
                       required
                     />
@@ -314,30 +213,15 @@ export function HealthRecords() {
                       type="date"
                       label="Date"
                       value={newRecord.date}
-                      onChange={(e) => setNewRecord(prev => ({ ...prev, date: e.target.value }))}
+                      onChange={(e) =>
+                        setNewRecord((prev) => ({ ...prev, date: e.target.value }))
+                      }
                       required
-                    />
-
-                    <FormInput
-                      id="veterinarian"
-                      name="veterinarian"
-                      label="Veterinarian"
-                      value={newRecord.veterinarian}
-                      onChange={(e) => setNewRecord(prev => ({ ...prev, veterinarian: e.target.value }))}
-                      placeholder="Dr. Smith"
-                    />
-
-                    <FormInput
-                      id="clinic"
-                      name="clinic"
-                      label="Clinic/Hospital"
-                      value={newRecord.clinic}
-                      onChange={(e) => setNewRecord(prev => ({ ...prev, clinic: e.target.value }))}
-                      placeholder="Veterinary Clinic Name"
                     />
                   </div>
                 </TabsContent>
 
+                {/* MEDICAL */}
                 <TabsContent value="medical" className="space-y-4">
                   <div className="space-y-4">
                     <div>
@@ -345,7 +229,9 @@ export function HealthRecords() {
                       <Textarea
                         placeholder="Enter diagnosis..."
                         value={newRecord.diagnosis}
-                        onChange={(e) => setNewRecord(prev => ({ ...prev, diagnosis: e.target.value }))}
+                        onChange={(e) =>
+                          setNewRecord((prev) => ({ ...prev, diagnosis: e.target.value }))
+                        }
                         className="mt-1"
                       />
                     </div>
@@ -355,7 +241,9 @@ export function HealthRecords() {
                       <Textarea
                         placeholder="Describe treatment provided..."
                         value={newRecord.treatment}
-                        onChange={(e) => setNewRecord(prev => ({ ...prev, treatment: e.target.value }))}
+                        onChange={(e) =>
+                          setNewRecord((prev) => ({ ...prev, treatment: e.target.value }))
+                        }
                         className="mt-1"
                       />
                     </div>
@@ -365,7 +253,9 @@ export function HealthRecords() {
                       <Textarea
                         placeholder="List medications and dosages..."
                         value={newRecord.medications}
-                        onChange={(e) => setNewRecord(prev => ({ ...prev, medications: e.target.value }))}
+                        onChange={(e) =>
+                          setNewRecord((prev) => ({ ...prev, medications: e.target.value }))
+                        }
                         className="mt-1"
                       />
                     </div>
@@ -375,7 +265,9 @@ export function HealthRecords() {
                       <Textarea
                         placeholder="Any additional observations or notes..."
                         value={newRecord.notes}
-                        onChange={(e) => setNewRecord(prev => ({ ...prev, notes: e.target.value }))}
+                        onChange={(e) =>
+                          setNewRecord((prev) => ({ ...prev, notes: e.target.value }))
+                        }
                         className="mt-1"
                         rows={4}
                       />
@@ -383,6 +275,7 @@ export function HealthRecords() {
                   </div>
                 </TabsContent>
 
+                {/* VITALS */}
                 <TabsContent value="vitals" className="space-y-4">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <FormInput
@@ -391,7 +284,9 @@ export function HealthRecords() {
                       type="number"
                       label="Weight (lbs)"
                       value={newRecord.weight}
-                      onChange={(e) => setNewRecord(prev => ({ ...prev, weight: e.target.value }))}
+                      onChange={(e) =>
+                        setNewRecord((prev) => ({ ...prev, weight: Number(e.target.value) }))
+                      }
                       placeholder="0.0"
                     />
 
@@ -401,27 +296,42 @@ export function HealthRecords() {
                       type="number"
                       label="Temperature (°F)"
                       value={newRecord.temperature}
-                      onChange={(e) => setNewRecord(prev => ({ ...prev, temperature: e.target.value }))}
+                      onChange={(e) =>
+                        setNewRecord((prev) => ({
+                          ...prev,
+                          temperature: Number(e.target.value),
+                        }))
+                      }
                       placeholder="101.0"
                     />
 
                     <FormInput
-                      id="heartRate"
-                      name="heartRate"
+                      id="heart_rate"
+                      name="heart_rate"
                       type="number"
                       label="Heart Rate (bpm)"
-                      value={newRecord.heartRate}
-                      onChange={(e) => setNewRecord(prev => ({ ...prev, heartRate: e.target.value }))}
+                      value={newRecord.heart_rate}
+                      onChange={(e) =>
+                        setNewRecord((prev) => ({
+                          ...prev,
+                          heart_rate: Number(e.target.value),
+                        }))
+                      }
                       placeholder="80"
                     />
 
                     <FormInput
-                      id="respiratoryRate"
-                      name="respiratoryRate"
+                      id="respiratory_rate"
+                      name="respiratory_rate"
                       type="number"
                       label="Respiratory Rate"
-                      value={newRecord.respiratoryRate}
-                      onChange={(e) => setNewRecord(prev => ({ ...prev, respiratoryRate: e.target.value }))}
+                      value={newRecord.respiratory_rate}
+                      onChange={(e) =>
+                        setNewRecord((prev) => ({
+                          ...prev,
+                          respiratory_rate: Number(e.target.value),
+                        }))
+                      }
                       placeholder="20"
                     />
                   </div>
@@ -430,22 +340,34 @@ export function HealthRecords() {
                     <div className="flex items-center space-x-2">
                       <input
                         type="checkbox"
-                        id="followUp"
-                        checked={newRecord.followUpRequired}
-                        onChange={(e) => setNewRecord(prev => ({ ...prev, followUpRequired: e.target.checked }))}
+                        id="follow_up_required"
+                        checked={!!newRecord.follow_up_required}
+                        onChange={(e) =>
+                          setNewRecord((prev) => ({
+                            ...prev,
+                            follow_up_required: e.target.checked,
+                          }))
+                        }
                         className="rounded border-gray-300"
                       />
-                      <label htmlFor="followUp" className="text-sm">Follow-up required</label>
+                      <label htmlFor="follow_up_required" className="text-sm">
+                        Follow-up required
+                      </label>
                     </div>
 
-                    {newRecord.followUpRequired && (
+                    {newRecord.follow_up_required && (
                       <FormInput
-                        id="followUpDate"
-                        name="followUpDate"
+                        id="follow_up_date"
+                        name="follow_up_date"
                         type="date"
                         label="Follow-up Date"
-                        value={newRecord.followUpDate}
-                        onChange={(e) => setNewRecord(prev => ({ ...prev, followUpDate: e.target.value }))}
+                        value={newRecord.follow_up_date ?? ""}
+                        onChange={(e) =>
+                          setNewRecord((prev) => ({
+                            ...prev,
+                            follow_up_date: e.target.value,
+                          }))
+                        }
                       />
                     )}
                   </div>
@@ -456,18 +378,17 @@ export function HealthRecords() {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddRecord}>
-                  Add Record
-                </Button>
+                <Button onClick={handleAddRecord}>Add Record</Button>
               </div>
             </DialogContent>
           </Dialog>
+
         </div>
       </div>
 
       {/* Records List */}
       <div className="space-y-4">
-        {filteredRecords.length === 0 ? (
+        {filteredRecords?.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
               <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -480,28 +401,29 @@ export function HealthRecords() {
             </CardContent>
           </Card>
         ) : (
-          filteredRecords.map(record => {
-            const pet = pets.find(p => p.id === record.petId);
+          filteredRecords?.map(record => {
+            const pet = record.pet;
+
             return (
               <Card key={record.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={pet?.imageUrl} alt={record.petName} />
-                        <AvatarFallback>{record.petName.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={pet?.image} alt={pet?.name} />
+                        <AvatarFallback>{pet?.name?.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold">{record.title}</h3>
                           <Badge className={getTypeColor(record.type)}>
-                            {recordTypes.find(t => t.value === record.type)?.label}
+                            {recordTypes.find(t => t.value === record.type)?.label || record.type}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
                           <span className="flex items-center gap-1">
                             <User className="h-3 w-3" />
-                            {record.petName}
+                            {pet?.name}
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
@@ -509,28 +431,26 @@ export function HealthRecords() {
                           </span>
                           <span className="flex items-center gap-1">
                             <User className="h-3 w-3" />
-                            {record.veterinarian}
+                            {record.user?.name || "Unknown Vet"}
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => {
-                          toast.info(`Viewing detailed record for ${record.petName}`);
-                          // In a real app, this would open a detailed view
+                          toast.info(`Viewing detailed record for ${pet?.name}`);
                         }}
                       >
                         <Eye className="h-3 w-3" />
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           toast.success(`Downloading record: ${record.title}`);
-                          // In a real app, this would generate and download a PDF
                         }}
                       >
                         <Download className="h-3 w-3" />
@@ -548,79 +468,84 @@ export function HealthRecords() {
                       <TabsTrigger value="notes">Notes</TabsTrigger>
                     </TabsList>
 
+                    {/* Summary */}
                     <TabsContent value="summary" className="mt-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <h4 className="font-medium mb-2">Diagnosis</h4>
-                          <p className="text-sm text-gray-600">{record.diagnosis || 'Not specified'}</p>
+                          <p className="text-sm text-gray-600">
+                            {record.diagnosis || "Not specified"}
+                          </p>
                         </div>
                         <div>
                           <h4 className="font-medium mb-2">Treatment</h4>
-                          <p className="text-sm text-gray-600">{record.treatment || 'Not specified'}</p>
+                          <p className="text-sm text-gray-600">
+                            {record.treatment || "Not specified"}
+                          </p>
                         </div>
                       </div>
                     </TabsContent>
 
+                    {/* Vitals */}
                     <TabsContent value="vitals" className="mt-4">
-                      {record.vitals ? (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="flex items-center gap-2">
-                            <Weight className="h-4 w-4 text-blue-500" />
-                            <div>
-                              <p className="text-sm font-medium">Weight</p>
-                              <p className="text-sm text-gray-600">{record.vitals.weight} lbs</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Thermometer className="h-4 w-4 text-red-500" />
-                            <div>
-                              <p className="text-sm font-medium">Temperature</p>
-                              <p className="text-sm text-gray-600">{record.vitals.temperature}°F</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Heart className="h-4 w-4 text-pink-500" />
-                            <div>
-                              <p className="text-sm font-medium">Heart Rate</p>
-                              <p className="text-sm text-gray-600">{record.vitals.heartRate} bpm</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Activity className="h-4 w-4 text-green-500" />
-                            <div>
-                              <p className="text-sm font-medium">Respiratory</p>
-                              <p className="text-sm text-gray-600">{record.vitals.respiratoryRate}/min</p>
-                            </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="flex items-center gap-2">
+                          <Weight className="h-4 w-4 text-blue-500" />
+                          <div>
+                            <p className="text-sm font-medium">Weight</p>
+                            <p className="text-sm text-gray-600">{record.weight} kg</p>
                           </div>
                         </div>
-                      ) : (
-                        <p className="text-sm text-gray-500">No vitals recorded</p>
-                      )}
+                        <div className="flex items-center gap-2">
+                          <Thermometer className="h-4 w-4 text-red-500" />
+                          <div>
+                            <p className="text-sm font-medium">Temperature</p>
+                            <p className="text-sm text-gray-600">{record.temperature} °C</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Heart className="h-4 w-4 text-pink-500" />
+                          <div>
+                            <p className="text-sm font-medium">Heart Rate</p>
+                            <p className="text-sm text-gray-600">{record.heart_rate} bpm</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Activity className="h-4 w-4 text-green-500" />
+                          <div>
+                            <p className="text-sm font-medium">Respiratory</p>
+                            <p className="text-sm text-gray-600">{record.respiratory_rate}/min</p>
+                          </div>
+                        </div>
+                      </div>
                     </TabsContent>
 
+                    {/* Treatment */}
                     <TabsContent value="treatment" className="mt-4">
                       <div className="space-y-3">
                         <div>
                           <h4 className="font-medium mb-1">Medications</h4>
-                          <p className="text-sm text-gray-600">{record.medications || 'None prescribed'}</p>
+                          <p className="text-sm text-gray-600">
+                            {record.medications || "None prescribed"}
+                          </p>
                         </div>
-                        {record.followUpRequired && (
+                        {record.follow_up_required ? (
                           <div>
                             <h4 className="font-medium mb-1">Follow-up Required</h4>
                             <p className="text-sm text-gray-600">
-                              {record.followUpDate ? 
-                                `Scheduled for ${new Date(record.followUpDate).toLocaleDateString()}` : 
-                                'Date to be determined'
-                              }
+                              {record.follow_up_date
+                                ? `Scheduled for ${new Date(record.follow_up_date).toLocaleDateString()}`
+                                : "Date to be determined"}
                             </p>
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     </TabsContent>
 
+                    {/* Notes */}
                     <TabsContent value="notes" className="mt-4">
                       <p className="text-sm text-gray-600 whitespace-pre-wrap">
-                        {record.notes || 'No additional notes'}
+                        {record.notes || "No additional notes"}
                       </p>
                     </TabsContent>
                   </Tabs>
@@ -628,6 +553,7 @@ export function HealthRecords() {
               </Card>
             );
           })
+
         )}
       </div>
     </div>

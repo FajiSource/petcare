@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
-import { IAdminTotals, INewPet, INewRecord, INewUser, INewVetUser } from "../types"
+import { IAdminTotals, INewHealthRecord, INewPet, INewUser, INewVetUser } from "../types"
 import { addUser, addVetUser, deleteUser, getAllAdmins, getAllVets, getOwners, getUsers, updateStatus } from "../../services/user-service"
 import { QUERY_KEYS } from "./queryKeys"
 import { getAdminTotals } from "../../services/dashboard-service"
-import { addRecord, getAllRecords } from "../../services/veterinarian-services"
+import { addRecord, getAllVetRecords } from "../../services/veterinarian-services"
 import { addNewPet, getPets } from "../../services/pet-service"
 
 
@@ -61,16 +61,16 @@ export const useGetOwners = () => {
 export const useAddRecord = () => {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (data: INewRecord) => addRecord(data),
+        mutationFn: (data: INewHealthRecord) => addRecord(data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_RECORDS] })
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_VET_RECORDS] })
         }
     })
 }
-export const useGetAllRecords = () => {
+export const usegetAllVetRecords = () => {
     return useQuery({
-        queryKey: [QUERY_KEYS.GET_ALL_RECORDS],
-        queryFn: getAllRecords
+        queryKey: [QUERY_KEYS.GET_ALL_VET_RECORDS],
+        queryFn: getAllVetRecords
     });
 };
 

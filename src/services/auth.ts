@@ -136,8 +136,9 @@ export class AuthService {
       // Check for demo accounts first
       const account = await apiService.post("/login", credentials);
       const data = account.data;
+      localStorage.setItem('authToken', data.access_token);
+
       if (account) {
-        console.log(`Logged in as demo account: `, data);
         return {
           success: true,
           token: `demo-jwt-token-${data.user.role}-${Date.now()}`,
@@ -145,7 +146,6 @@ export class AuthService {
         };
       }
 
-      // If not a demo account, simulate different response scenarios
       const scenarios = this.getLoginScenarios(credentials);
       const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
 

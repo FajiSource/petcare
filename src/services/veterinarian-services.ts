@@ -1,7 +1,8 @@
-import { INewRecord } from "../lib/types";
+import { chownSync } from "fs";
+import { INewHealthRecord } from "../lib/types";
 import apiService from "./api/apiService";
 
-export const addRecord = async (data: INewRecord) => {
+export const addRecord = async (data: INewHealthRecord) => {
     try {
         const res = await apiService.post('/records', data)
 
@@ -15,11 +16,13 @@ export const addRecord = async (data: INewRecord) => {
     }
 }
 
-export const getAllRecords = async () => {
+export const getAllVetRecords = async () => {
     try {
-        const res = await apiService.get('/records')
-        if (res.data.status === 'success') {
-            return res.data.record
+        const res = await apiService.get('/records/vet')
+        console.log(res)
+        if (res.data.success) {
+            console.log(res.data.records)
+            return res.data.records
         }
         return []
     } catch (error) {
@@ -27,3 +30,4 @@ export const getAllRecords = async () => {
         throw error
     }
 }
+

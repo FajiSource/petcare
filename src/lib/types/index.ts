@@ -128,28 +128,6 @@ export interface IAdminTotals {
   completed_appointments: number;
 }
 
-export interface INewRecord {
-  appointment_id: number;
-
-  title: string;
-  date: string;
-  type: string;
-
-  diagnosis: string;
-  treatment: string;
-  medications: string;
-  notes: string;
-
-  weight: number;
-  temperature: number;
-  heart_rate: number;
-  respiratory_rate: number;
-
-  follow_up_required?: boolean | null;
-  follow_up_date?: string | null;
-}
-
-
 export interface IPet {
   age: number;
   allergies: string;
@@ -169,3 +147,50 @@ export interface IPet {
   user_id: number;
   weight: string;
 }
+
+export interface IHealthRecord {
+  id: number;
+  pet_id: number;
+  vet_id: number;
+  appointment_id?: number | null;
+
+  title: string;
+  type: string;
+  date: string;
+
+  diagnosis: string;
+  treatment: string;
+  medications: string;
+  notes: string;
+
+  weight: string;
+  temperature: string;
+  heart_rate: number;
+  respiratory_rate: number;
+
+  follow_up_required: boolean | number;
+  follow_up_date?: string | null;
+
+  created_at: string;
+  updated_at: string;
+
+  pet: IPet;
+}
+
+export interface INewHealthRecord {
+  pet_id: number;
+  title: string;
+  date: string; 
+  type: string;
+  diagnosis: string;
+  treatment: string;
+  medications: string;
+  notes: string;
+  weight: number;
+  temperature: number;
+  heart_rate: number;
+  respiratory_rate: number;
+  follow_up_required?: boolean | null;
+  follow_up_date?: string | null; 
+}
+

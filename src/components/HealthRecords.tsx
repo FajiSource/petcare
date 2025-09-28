@@ -22,11 +22,11 @@ import {
   Eye,
   Download
 } from 'lucide-react';
-import { useAddRecord, usegetAllVetRecords } from '../lib/react-query/QueriesAndMutations';
+import { useAddRecord, useGetAllPets, usegetAllVetRecords } from '../lib/react-query/QueriesAndMutations';
 import { INewHealthRecord } from '../lib/types';
 
 export function HealthRecords() {
-  const { pets } = useApp();
+  const { data: pets, isPending: isGettingPets } = useGetAllPets()
   const { data: healthRecords, isPending: isGettingHealthRecords, refetch: loadRecords } = usegetAllVetRecords()
   const { mutateAsync: createNewRecord, isPending: isAddingNewRecord } = useAddRecord()
   const [selectedPet, setSelectedPet] = useState<string>('all');
@@ -98,6 +98,7 @@ export function HealthRecords() {
         follow_up_date: null,
       });
       setIsDialogOpen(false);
+      toast.
       toast.success(`New Health record added`);
     } catch (error) {
       console.log(error)
@@ -125,7 +126,7 @@ export function HealthRecords() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Pets</SelectItem>
-              {pets.map(pet => (
+              {pets?.map(pet => (
                 <SelectItem key={pet.id} value={pet.id}>{pet.name}</SelectItem>
               ))}
             </SelectContent>
@@ -165,7 +166,7 @@ export function HealthRecords() {
                           <SelectValue placeholder="Choose a pet" />
                         </SelectTrigger>
                         <SelectContent>
-                          {pets.map((pet) => (
+                          {pets?.map((pet) => (
                             <SelectItem key={pet.id} value={String(pet.id)}>
                               {pet.name} ({pet.species})
                             </SelectItem>

@@ -13,7 +13,6 @@ export const useAddNewUser = () => {
     })
 }
 
-
 export const useAddNewVetUser = () => {
     const queryClient = useQueryClient();
     return useMutation({

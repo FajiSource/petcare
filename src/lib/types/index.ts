@@ -180,7 +180,7 @@ export interface IHealthRecord {
 export interface INewHealthRecord {
   pet_id: number;
   title: string;
-  date: string; 
+  date: string;
   type: string;
   diagnosis: string;
   treatment: string;
@@ -191,6 +191,50 @@ export interface INewHealthRecord {
   heart_rate: number;
   respiratory_rate: number;
   follow_up_required?: boolean | null;
-  follow_up_date?: string | null; 
+  follow_up_date?: string | null;
 }
 
+
+export interface INewPrescription {
+  pet_id: number;
+  medication_name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  prescribed_date: string;
+  start_date: string;
+  end_date: string;
+  instructions: string;
+  side_effects: string;
+  refills_remaining: number;
+  total_refills: number;
+  status: string;
+  category: string;
+  manufacturer: string;
+  cost: number;
+}
+
+export interface IPrescription {
+  id: number;
+  vet_id: number;
+  pet_id: number;
+  medication_name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  prescribed_date: string;
+  start_date: string;
+  end_date: string;
+  veterinarian: string;
+  instructions: string;
+  side_effects: string;
+  refills_remaining: number;
+  total_refills: number;
+  status: string;
+  category: string;
+  manufacturer: string;
+  cost: number;
+  created_at: string;
+  updated_at: string;
+  pet: IPet;
+}

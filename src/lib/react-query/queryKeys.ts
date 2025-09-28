@@ -5,5 +5,6 @@ export const QUERY_KEYS = {
     GET_ALL_VET_RECORDS : 'getAllVetRecords',
     GET_ALL_USERS: "getUsers",
     GET_ALL_OWNERS: "getOwners",
-    GET_PETS: "getPets"
+    GET_PETS: "getPets",
+    GET_VET_PRESCRIPTIONS: "getVetPrescriptionRecords"
 };

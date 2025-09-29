@@ -238,3 +238,76 @@ export interface IPrescription {
   updated_at: string;
   pet: IPet;
 }
+
+
+export interface IMedication {
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+}
+
+export interface IAttachment {
+  file_name: string;
+  url: string;
+}
+
+export interface IMedicalNote {
+  id: number;
+  vet_id: number;
+  date: string;
+  time: string;
+  patient_id: number;
+  patient_name: string;
+  patient_species: string;
+  patient_breed?: string | null;
+  owner_name: string;
+  type: string;
+  priority: string;
+  title: string;
+  complaint?: string | null;
+  findings?: string | null;
+  diagnosis?: string | null;
+  treatment?: string | null;
+  recommendations?: string | null;
+  follow_up?: string | null;
+  medications: IMedication[];
+  attachments: IAttachment[];
+  status: string;
+  tags: string[];
+  patient_image_url?: string | null;
+  created_at: string;
+  updated_at: string;
+  image: string;
+}
+
+export interface INewMedication {
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+}
+
+export interface INewAttachment {
+  file_name: string;
+  url: string;
+}
+
+export interface INewMedicalNote {
+  patient_id: number;
+  type: string;
+  priority: string;
+  status: string;
+  title: string;
+  complaint?: string | null;
+  findings?: string | null;
+  diagnosis?: string | null;
+  treatment?: string | null;
+  recommendations?: string | null;
+  follow_up?: string | null;
+  medications: INewMedication[];
+  attachments: INewAttachment[];
+  tags: string[];
+  date: string; 
+  time: string; 
+}

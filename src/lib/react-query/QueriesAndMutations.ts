@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
-import { IAdminTotals, INewHealthRecord, INewPet, INewPrescription, INewUser, INewVetUser } from "../types"
+import { IAdminTotals, INewHealthRecord, INewMedicalNote, INewPet, INewPrescription, INewUser, INewVetUser } from "../types"
 import { addUser, addVetUser, deleteUser, getAllAdmins, getAllVets, getOwners, getUsers, updateStatus } from "../../services/user-service"
 import { QUERY_KEYS } from "./queryKeys"
 import { getAdminTotals } from "../../services/dashboard-service"
 import { addRecord, getAllVetRecords } from "../../services/veterinarian-services"
 import { addNewPet, getPets } from "../../services/pet-service"
 import { addNewPrescription, getVetPrescriptionRecords } from "../../services/prescription-service"
+import { addNewNote, getVetNoteRecords } from "../../services/note-service"
 
 
 export const useAddNewUser = () => {
@@ -125,6 +126,24 @@ export const useAddNewPrescription = () => {
         mutationFn: (data: INewPrescription) => addNewPrescription(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VET_PRESCRIPTIONS] });
+        }
+    })
+}
+
+export const useGetVetNotes = () => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.GET_VET_NOTES],
+        queryFn: getVetNoteRecords
+    });
+};
+
+
+export const useAddNewNote = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (data: INewMedicalNote) => addNewNote(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VET_NOTES] });
         }
     })
 }

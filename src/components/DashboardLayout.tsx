@@ -21,8 +21,6 @@ import { MedicalNotes } from './vet/MedicalNotes';
 import { MyReports } from './vet/MyReports';
 import { PetOwnerReports } from './PetOwnerReports';
 
-
-
 // Admin-specific components (placeholders for now implemented ones)
 function ManageClinics() {
   return (
@@ -37,8 +35,6 @@ function ManageClinics() {
     </div>
   );
 }
-
-
 
 export function DashboardLayout() {
   const { currentView, user } = useApp();

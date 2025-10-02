@@ -759,65 +759,70 @@ export function MedicalNotes() {
         </CardContent>
       </Card>
 
-      {/* Notes Tabs */}
-      <Tabs defaultValue="recent" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="recent">
-            Recent ({recentNotes?.length})
-          </TabsTrigger>
-          <TabsTrigger value="drafts">
-            Drafts ({draftNotes?.length})
-          </TabsTrigger>
-          <TabsTrigger value="all">
-            All Notes ({filteredNotes?.length})
-          </TabsTrigger>
-        </TabsList>
+      {
+        isGettingNotes ? (
+          <p>Loading...</p>
+        ) : (
+          <Tabs defaultValue="recent" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="recent">
+                Recent ({recentNotes?.length})
+              </TabsTrigger>
+              <TabsTrigger value="drafts">
+                Drafts ({draftNotes?.length})
+              </TabsTrigger>
+              <TabsTrigger value="all">
+                All Notes ({filteredNotes?.length})
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="recent" className="space-y-4">
-          {recentNotes?.length > 0 ? (
-            recentNotes?.map((note: IMedicalNote) => (
-              <NoteCard key={note.id} note={note} />
-            ))
-          ) : (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <ClipboardList className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-gray-500">No recent notes found</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+            <TabsContent value="recent" className="space-y-4">
+              {recentNotes?.length > 0 ? (
+                recentNotes?.map((note: IMedicalNote) => (
+                  <NoteCard key={note.id} note={note} />
+                ))
+              ) : (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <ClipboardList className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-500">No recent notes found</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
 
-        <TabsContent value="drafts" className="space-y-4">
-          {draftNotes?.length > 0 ? (
-            draftNotes?.map((note: IMedicalNote) => (
-              <NoteCard key={note.id} note={note} />
-            ))
-          ) : (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Edit className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-gray-500">No draft notes</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+            <TabsContent value="drafts" className="space-y-4">
+              {draftNotes?.length > 0 ? (
+                draftNotes?.map((note: IMedicalNote) => (
+                  <NoteCard key={note.id} note={note} />
+                ))
+              ) : (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <Edit className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-500">No draft notes</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
 
-        <TabsContent value="all" className="space-y-4">
-          {filteredNotes?.length > 0 ? (
-            filteredNotes?.map((note: IMedicalNote) => (
-              <NoteCard key={note.id} note={note} />
-            ))
-          ) : (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <ClipboardList className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-gray-500">No notes found matching your criteria</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="all" className="space-y-4">
+              {filteredNotes?.length > 0 ? (
+                filteredNotes?.map((note: IMedicalNote) => (
+                  <NoteCard key={note.id} note={note} />
+                ))
+              ) : (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <ClipboardList className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-500">No notes found matching your criteria</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
+        )
+      }
     </div>
   );
 }

@@ -11,7 +11,7 @@ import { AlertCircle, Calendar, Clock, Pill, Plus, Search, RefreshCw, FileText }
 import { Alert, AlertDescription } from './ui/alert';
 import { Textarea } from './ui/textarea';
 import { Progress } from './ui/progress';
-import { useAddNewPrescription, useGetAllPets, useGetVetPrescriptions } from '../lib/react-query/QueriesAndMutations';
+import { useAddNewPrescription, useGetAllPets, useGetOwnerPrescriptions, useGetVetPrescriptions } from '../lib/react-query/QueriesAndMutations';
 import { INewPrescription, IPrescription } from '../lib/types';
 
 const INITIAL_PRESCRIPTION = {
@@ -33,8 +33,13 @@ const INITIAL_PRESCRIPTION = {
   cost: 0,
 }
 export function Prescriptions() {
-  const { user } = useApp();
-  const { data: prescriptions, isPending: isGettingPrescriptions } = useGetVetPrescriptions()
+  const { user, currentRole } = useApp();
+  const vetQuery = useGetVetPrescriptions()
+  const ownerQuery = useGetOwnerPrescriptions()
+
+  const prescriptions = currentRole['veterinarian'] ? vetQuery.data : ownerQuery.data;
+  const isGettingPrescriptions = currentRole['veterinarian'] ? vetQuery.isPending : ownerQuery.isPending;
+
   const { data: pets, isPending: isGettingPets } = useGetAllPets()
   const { mutateAsync: addNewPrescription, isPending: isAddingNewPrescription } = useAddNewPrescription()
   const [searchTerm, setSearchTerm] = useState('');
@@ -117,7 +122,6 @@ export function Prescriptions() {
 
   const handleAddPrescription = async () => {
     try {
-      // Calculate end date based on duration and start date
       const startDate = new Date(newPrescription.start_date);
       const durationDays = parseInt(newPrescription.duration.split(' ')[0]) || 0;
       const endDate = new Date(startDate);
@@ -482,6 +486,11 @@ export function Prescriptions() {
 
       {/* Prescription Records */}
       <div className="grid gap-4">
+        {
+          isGettingPrescriptions && (
+            <p>Loading...</p>
+          )
+        }
         {filteredPrescriptions?.map((prescription) => (
           <Card key={prescription.id} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">

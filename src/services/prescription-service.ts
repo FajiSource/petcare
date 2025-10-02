@@ -39,3 +39,16 @@ export const getVetPrescriptionRecords = async () => {
         throw error;
     }
 };
+
+export const getOwnerPrescriptionRecords = async () => {
+    try {
+        const res = await apiService.get('/prescriptions/owner');
+        if (res.data.success) {
+            return res.data.prescriptions;
+        }
+        return [];
+    } catch (error) {
+        console.error('Error fetching prescriptions:', error);
+        throw error;
+    }
+};

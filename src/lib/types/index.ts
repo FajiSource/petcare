@@ -143,9 +143,10 @@ export interface IPet {
   phone: string;
   species: string;
   updated_at: string;
-  user: IUser[];
+  user: IUser;
   user_id: number;
   weight: string;
+  image: string;
 }
 
 export interface IHealthRecord {
@@ -308,6 +309,75 @@ export interface INewMedicalNote {
   medications: INewMedication[];
   attachments: INewAttachment[];
   tags: string[];
-  date: string; 
-  time: string; 
+  date: string;
+  time: string;
+}
+
+
+export interface INewAppointment {
+  pet_id: number;
+  veterinarian_id: number;
+  type: string;
+  clinic: string;
+  date: string;
+  time: string;
+
+  notes?: string | null;
+  priority?: "high" | "medium" | "low" | null;
+  duration?: number | null;
+  condition?: string | null;
+  symptoms?: string[] | null;
+  time_waiting?: string | null;
+}
+
+
+export interface IAppointment {
+  id?: number;
+
+  pet_id: number;
+  veterinarian_id: number;
+
+  type: string;
+  clinic: string;
+  date: string;
+  time: string;
+
+  status: "scheduled" | "confirmed" | "in-progress" | "completed" | "cancelled" | "urgent";
+
+  duration?: number | null;
+  notes?: string | null;
+  priority: string;
+  condition?: string | null;
+  symptoms?: string[] | null;
+  time_waiting?: string | null;
+
+  created_at: string;
+  updated_at: string;
+
+  pet: IPet;
+  veterinarian: IUser;
+}
+
+export interface ICurrentRole {
+  admin: boolean,
+  veterinarian: boolean,
+  pet_owner: boolean,
+}
+
+export interface IClinic {
+  id: number;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  isActive: boolean;
+  created_at: string;
+  updated_at: string;
+}
+export interface INewClinic {
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  isActive: boolean;
 }

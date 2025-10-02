@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -22,16 +22,23 @@ import {
   Eye,
   Download
 } from 'lucide-react';
-import { useAddRecord, useGetAllPets, usegetAllVetRecords } from '../lib/react-query/QueriesAndMutations';
+import { useAddRecord, useGetAllPets, usegetAllVetRecords, useGetOwnerRecords } from '../lib/react-query/QueriesAndMutations';
 import { INewHealthRecord } from '../lib/types';
 
 export function HealthRecords() {
+  const { user , currentRole} = useApp()
   const { data: pets, isPending: isGettingPets } = useGetAllPets()
-  const { data: healthRecords, isPending: isGettingHealthRecords, refetch: loadRecords } = usegetAllVetRecords()
+  
+  const vetQuery = usegetAllVetRecords()
+  const ownerQuery = useGetOwnerRecords()
+
+  const healthRecords = currentRole['veterinarian'] ? vetQuery.data : ownerQuery.data
+  const isGettingHealthRecords = currentRole['veterinarian'] ? vetQuery.isPending : ownerQuery.isPending
+  const loadRecords = currentRole['veterinarian'] ? vetQuery.refetch : ownerQuery.refetch
+
   const { mutateAsync: createNewRecord, isPending: isAddingNewRecord } = useAddRecord()
   const [selectedPet, setSelectedPet] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
 
   const [newRecord, setNewRecord] = useState<INewHealthRecord>({
     pet_id: 0,
@@ -49,6 +56,8 @@ export function HealthRecords() {
     follow_up_required: false,
     follow_up_date: null,
   });
+
+
 
   const recordTypes = [
     { value: 'checkup', label: 'Routine Checkup' },
@@ -99,7 +108,7 @@ export function HealthRecords() {
       });
       setIsDialogOpen(false);
       toast.
-      toast.success(`New Health record added`);
+        toast.success(`New Health record added`);
     } catch (error) {
       console.log(error)
     }
@@ -132,257 +141,261 @@ export function HealthRecords() {
             </SelectContent>
           </Select>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Record
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Add New Health Record</DialogTitle>
-              </DialogHeader>
+          {
+            currentRole['veterinarian'] && (
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Record
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Add New Health Record</DialogTitle>
+                  </DialogHeader>
 
-              <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="basic">Basic Information</TabsTrigger>
-                  <TabsTrigger value="medical">Medical Details</TabsTrigger>
-                  <TabsTrigger value="vitals">Vitals & Follow-up</TabsTrigger>
-                </TabsList>
+                  <Tabs defaultValue="basic" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="basic">Basic Information</TabsTrigger>
+                      <TabsTrigger value="medical">Medical Details</TabsTrigger>
+                      <TabsTrigger value="vitals">Vitals & Follow-up</TabsTrigger>
+                    </TabsList>
 
-                {/* BASIC */}
-                <TabsContent value="basic" className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">Select Pet</label>
-                      <Select
-                        value={String(newRecord.pet_id)}
-                        onValueChange={(value) =>
-                          setNewRecord((prev) => ({ ...prev, pet_id: Number(value) }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose a pet" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {pets?.map((pet) => (
-                            <SelectItem key={pet.id} value={String(pet.id)}>
-                              {pet.name} ({pet.species})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {/* BASIC */}
+                    <TabsContent value="basic" className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium">Select Pet</label>
+                          <Select
+                            value={String(newRecord.pet_id)}
+                            onValueChange={(value) =>
+                              setNewRecord((prev) => ({ ...prev, pet_id: Number(value) }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choose a pet" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {pets?.map((pet) => (
+                                <SelectItem key={pet.id} value={String(pet.id)}>
+                                  {pet.name} ({pet.species})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                    <div>
-                      <label className="text-sm font-medium">Record Type</label>
-                      <Select
-                        value={newRecord.type}
-                        onValueChange={(value: string) =>
-                          setNewRecord((prev) => ({ ...prev, type: value }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {recordTypes.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                        <div>
+                          <label className="text-sm font-medium">Record Type</label>
+                          <Select
+                            value={newRecord.type}
+                            onValueChange={(value: string) =>
+                              setNewRecord((prev) => ({ ...prev, type: value }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {recordTypes.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                    <FormInput
-                      id="title"
-                      name="title"
-                      label="Record Title"
-                      value={newRecord.title}
-                      onChange={(e) =>
-                        setNewRecord((prev) => ({ ...prev, title: e.target.value }))
-                      }
-                      placeholder="e.g., Annual Health Examination"
-                      required
-                    />
+                        <FormInput
+                          id="title"
+                          name="title"
+                          label="Record Title"
+                          value={newRecord.title}
+                          onChange={(e) =>
+                            setNewRecord((prev) => ({ ...prev, title: e.target.value }))
+                          }
+                          placeholder="e.g., Annual Health Examination"
+                          required
+                        />
 
-                    <FormInput
-                      id="date"
-                      name="date"
-                      type="date"
-                      label="Date"
-                      value={newRecord.date}
-                      onChange={(e) =>
-                        setNewRecord((prev) => ({ ...prev, date: e.target.value }))
-                      }
-                      required
-                    />
+                        <FormInput
+                          id="date"
+                          name="date"
+                          type="date"
+                          label="Date"
+                          value={newRecord.date}
+                          onChange={(e) =>
+                            setNewRecord((prev) => ({ ...prev, date: e.target.value }))
+                          }
+                          required
+                        />
+                      </div>
+                    </TabsContent>
+
+                    {/* MEDICAL */}
+                    <TabsContent value="medical" className="space-y-4">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium">Diagnosis</label>
+                          <Textarea
+                            placeholder="Enter diagnosis..."
+                            value={newRecord.diagnosis}
+                            onChange={(e) =>
+                              setNewRecord((prev) => ({ ...prev, diagnosis: e.target.value }))
+                            }
+                            className="mt-1"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium">Treatment</label>
+                          <Textarea
+                            placeholder="Describe treatment provided..."
+                            value={newRecord.treatment}
+                            onChange={(e) =>
+                              setNewRecord((prev) => ({ ...prev, treatment: e.target.value }))
+                            }
+                            className="mt-1"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium">Medications</label>
+                          <Textarea
+                            placeholder="List medications and dosages..."
+                            value={newRecord.medications}
+                            onChange={(e) =>
+                              setNewRecord((prev) => ({ ...prev, medications: e.target.value }))
+                            }
+                            className="mt-1"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium">Additional Notes</label>
+                          <Textarea
+                            placeholder="Any additional observations or notes..."
+                            value={newRecord.notes}
+                            onChange={(e) =>
+                              setNewRecord((prev) => ({ ...prev, notes: e.target.value }))
+                            }
+                            className="mt-1"
+                            rows={4}
+                          />
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    {/* VITALS */}
+                    <TabsContent value="vitals" className="space-y-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <FormInput
+                          id="weight"
+                          name="weight"
+                          type="number"
+                          label="Weight (lbs)"
+                          value={newRecord.weight}
+                          onChange={(e) =>
+                            setNewRecord((prev) => ({ ...prev, weight: Number(e.target.value) }))
+                          }
+                          placeholder="0.0"
+                        />
+
+                        <FormInput
+                          id="temperature"
+                          name="temperature"
+                          type="number"
+                          label="Temperature (°F)"
+                          value={newRecord.temperature}
+                          onChange={(e) =>
+                            setNewRecord((prev) => ({
+                              ...prev,
+                              temperature: Number(e.target.value),
+                            }))
+                          }
+                          placeholder="101.0"
+                        />
+
+                        <FormInput
+                          id="heart_rate"
+                          name="heart_rate"
+                          type="number"
+                          label="Heart Rate (bpm)"
+                          value={newRecord.heart_rate}
+                          onChange={(e) =>
+                            setNewRecord((prev) => ({
+                              ...prev,
+                              heart_rate: Number(e.target.value),
+                            }))
+                          }
+                          placeholder="80"
+                        />
+
+                        <FormInput
+                          id="respiratory_rate"
+                          name="respiratory_rate"
+                          type="number"
+                          label="Respiratory Rate"
+                          value={newRecord.respiratory_rate}
+                          onChange={(e) =>
+                            setNewRecord((prev) => ({
+                              ...prev,
+                              respiratory_rate: Number(e.target.value),
+                            }))
+                          }
+                          placeholder="20"
+                        />
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="follow_up_required"
+                            checked={!!newRecord.follow_up_required}
+                            onChange={(e) =>
+                              setNewRecord((prev) => ({
+                                ...prev,
+                                follow_up_required: e.target.checked,
+                              }))
+                            }
+                            className="rounded border-gray-300"
+                          />
+                          <label htmlFor="follow_up_required" className="text-sm">
+                            Follow-up required
+                          </label>
+                        </div>
+
+                        {newRecord.follow_up_required && (
+                          <FormInput
+                            id="follow_up_date"
+                            name="follow_up_date"
+                            type="date"
+                            label="Follow-up Date"
+                            value={newRecord.follow_up_date ?? ""}
+                            onChange={(e) =>
+                              setNewRecord((prev) => ({
+                                ...prev,
+                                follow_up_date: e.target.value,
+                              }))
+                            }
+                          />
+                        )}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleAddRecord}>Add Record</Button>
                   </div>
-                </TabsContent>
-
-                {/* MEDICAL */}
-                <TabsContent value="medical" className="space-y-4">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium">Diagnosis</label>
-                      <Textarea
-                        placeholder="Enter diagnosis..."
-                        value={newRecord.diagnosis}
-                        onChange={(e) =>
-                          setNewRecord((prev) => ({ ...prev, diagnosis: e.target.value }))
-                        }
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium">Treatment</label>
-                      <Textarea
-                        placeholder="Describe treatment provided..."
-                        value={newRecord.treatment}
-                        onChange={(e) =>
-                          setNewRecord((prev) => ({ ...prev, treatment: e.target.value }))
-                        }
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium">Medications</label>
-                      <Textarea
-                        placeholder="List medications and dosages..."
-                        value={newRecord.medications}
-                        onChange={(e) =>
-                          setNewRecord((prev) => ({ ...prev, medications: e.target.value }))
-                        }
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium">Additional Notes</label>
-                      <Textarea
-                        placeholder="Any additional observations or notes..."
-                        value={newRecord.notes}
-                        onChange={(e) =>
-                          setNewRecord((prev) => ({ ...prev, notes: e.target.value }))
-                        }
-                        className="mt-1"
-                        rows={4}
-                      />
-                    </div>
-                  </div>
-                </TabsContent>
-
-                {/* VITALS */}
-                <TabsContent value="vitals" className="space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <FormInput
-                      id="weight"
-                      name="weight"
-                      type="number"
-                      label="Weight (lbs)"
-                      value={newRecord.weight}
-                      onChange={(e) =>
-                        setNewRecord((prev) => ({ ...prev, weight: Number(e.target.value) }))
-                      }
-                      placeholder="0.0"
-                    />
-
-                    <FormInput
-                      id="temperature"
-                      name="temperature"
-                      type="number"
-                      label="Temperature (°F)"
-                      value={newRecord.temperature}
-                      onChange={(e) =>
-                        setNewRecord((prev) => ({
-                          ...prev,
-                          temperature: Number(e.target.value),
-                        }))
-                      }
-                      placeholder="101.0"
-                    />
-
-                    <FormInput
-                      id="heart_rate"
-                      name="heart_rate"
-                      type="number"
-                      label="Heart Rate (bpm)"
-                      value={newRecord.heart_rate}
-                      onChange={(e) =>
-                        setNewRecord((prev) => ({
-                          ...prev,
-                          heart_rate: Number(e.target.value),
-                        }))
-                      }
-                      placeholder="80"
-                    />
-
-                    <FormInput
-                      id="respiratory_rate"
-                      name="respiratory_rate"
-                      type="number"
-                      label="Respiratory Rate"
-                      value={newRecord.respiratory_rate}
-                      onChange={(e) =>
-                        setNewRecord((prev) => ({
-                          ...prev,
-                          respiratory_rate: Number(e.target.value),
-                        }))
-                      }
-                      placeholder="20"
-                    />
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="follow_up_required"
-                        checked={!!newRecord.follow_up_required}
-                        onChange={(e) =>
-                          setNewRecord((prev) => ({
-                            ...prev,
-                            follow_up_required: e.target.checked,
-                          }))
-                        }
-                        className="rounded border-gray-300"
-                      />
-                      <label htmlFor="follow_up_required" className="text-sm">
-                        Follow-up required
-                      </label>
-                    </div>
-
-                    {newRecord.follow_up_required && (
-                      <FormInput
-                        id="follow_up_date"
-                        name="follow_up_date"
-                        type="date"
-                        label="Follow-up Date"
-                        value={newRecord.follow_up_date ?? ""}
-                        onChange={(e) =>
-                          setNewRecord((prev) => ({
-                            ...prev,
-                            follow_up_date: e.target.value,
-                          }))
-                        }
-                      />
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddRecord}>Add Record</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+                </DialogContent>
+              </Dialog>
+            )
+          }
 
         </div>
       </div>

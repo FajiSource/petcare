@@ -28,29 +28,16 @@ import {
   XCircle,
   Clock
 } from 'lucide-react';
-import { useAddNewVetUser, useDeleteUser, useGetAllVets, useUpdateUserStatus } from '../../lib/react-query/QueriesAndMutations';
+import { useAddNewVetUser, useClinicOptions, useDeleteUser, useGetAllVets, useUpdateUserStatus } from '../../lib/react-query/QueriesAndMutations';
 import { INewVetUser, IVeterinarian } from '../../lib/types';
 
-
-
-interface Clinic {
-  id: string;
-  name: string;
-  address: string;
-}
 
 export function VeterinarianManagement() {
   const { mutateAsync: addNewVet, isPending: isAddingNewVet, error: AddVetError, isError: isAddVetError } = useAddNewVetUser()
   const { data: allVets, isPending: isGettingVetenarians, refetch } = useGetAllVets()
+  const { data: clinics } = useClinicOptions()
   const { mutateAsync: deleteUser, isPending: isDeletingUser } = useDeleteUser()
   const { mutateAsync: updateUserStatus, isPending: isUpdatingStatus } = useUpdateUserStatus()
-
-
-  const [clinics] = useState<Clinic[]>([
-    { id: '1', name: 'PetCare Veterinary Clinic', address: '123 Pet Street, City, State' },
-    { id: '2', name: 'Animal Health Center', address: '456 Animal Ave, City, State' },
-    { id: '3', name: 'City Pet Hospital', address: '789 Veterinary Blvd, City, State' }
-  ]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [clinicFilter, setClinicFilter] = useState<string>('all');
@@ -261,7 +248,7 @@ export function VeterinarianManagement() {
                     <SelectValue placeholder="Select clinic" />
                   </SelectTrigger>
                   <SelectContent>
-                    {clinics.map(clinic => (
+                    {clinics?.map(clinic => (
                       <SelectItem key={clinic.id} value={clinic.name}>
                         {clinic.name}
                       </SelectItem>
@@ -360,7 +347,7 @@ export function VeterinarianManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Clinics</SelectItem>
-                  {clinics.map(clinic => (
+                  {clinics?.map(clinic => (
                     <SelectItem key={clinic.id} value={clinic.id}>{clinic.name}</SelectItem>
                   ))}
                 </SelectContent>

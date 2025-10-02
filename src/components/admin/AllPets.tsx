@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -24,12 +24,11 @@ import {
   Download,
   Mail
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Textarea } from '../ui/textarea';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
-import { useAddNewPet, useGetAllPets, useGetOwners } from '../../lib/react-query/QueriesAndMutations';
+import { useAddNewPet, useGetAllPets, useGetOwners, useOwnerOptions } from '../../lib/react-query/QueriesAndMutations';
 import { INewPet, IUser } from '../../lib/types';
 
 interface Pet {
@@ -62,7 +61,7 @@ export function AllPets() {
   const { user } = useApp();
 
   // queries
-  const { data: owners, isPending: isGettingOwners } = useGetOwners();
+  const { data: owners, isPending: isGettingOwners } = useOwnerOptions();
   const { data: pets, isPending: isGettingPets } = useGetAllPets();
   const { mutateAsync: addNewPet, isPending: isAddingNewPet } = useAddNewPet();
   useEffect(() => {

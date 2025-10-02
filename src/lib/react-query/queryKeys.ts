@@ -7,5 +7,10 @@ export const QUERY_KEYS = {
     GET_ALL_OWNERS: "getOwners",
     GET_PETS: "getPets",
     GET_VET_PRESCRIPTIONS: "getVetPrescriptionRecords",
-    GET_VET_NOTES: "getVetNoteRecords"
+    GET_VET_NOTES: "getVetNoteRecords",
+    GET_OWNER_APPOINTMENTS: "getOwnerAppointments",
+    GET_VET_APPOINTMENTS: "getVetAAppointments",
+    GET_ALL_APPOINTMENTS : 'getAllAppointments',
+    GET_CLINICS_OPTIONS : "getClinicsSelections",
+    GET_CLINICS: "getClinics"
 };

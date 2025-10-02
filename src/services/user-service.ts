@@ -1,6 +1,17 @@
 import { INewUser, INewVetUser } from "../lib/types";
 import apiService from "./api/apiService";
 
+export const getUser = async () => {
+    try {
+        const res = await apiService.get('/user');
+        return res.data;
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        throw error;
+    }
+};
+
+
 export const addUser = async (data: INewUser) => {
     try {
         const res = await apiService.post('/users', data);

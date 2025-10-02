@@ -1,9 +1,15 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useGetAllUsers } from '../lib/react-query/QueriesAndMutations';
-import { IUser } from '../lib/types';
+import { ICurrentRole, IUser } from '../lib/types';
+import { getUser } from '../services/user-service';
 
 export type UserRole = 'admin' | 'veterinarian' | 'pet_owner';
 
+const INITIAL_CURRENT_ROLE: ICurrentRole = {
+  admin: false,
+  veterinarian: false,
+  pet_owner: false,
+}
 interface User {
   id: string;
   email: string;
@@ -63,34 +69,54 @@ interface AppContextType {
   canManageAppointments: () => boolean;
   canViewHealthRecords: (petId?: string) => boolean;
   canEditHealthRecords: (petId?: string) => boolean;
+  currentRole: ICurrentRole
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<IUser | null>(null);
   const [pets, setPets] = useState<Pet[]>([]);
   const [veterinarians, setVeterinarians] = useState<Veterinarian[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [currentView, setCurrentView] = useState('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentRole, setCurrentRole] = useState<ICurrentRole>(INITIAL_CURRENT_ROLE)
 
   useEffect(() => {
     // Check for saved auth state
-    const savedUser = localStorage.getItem('petcare_user');
-    if (savedUser) {
+    const getCurrentUser = async () => {
       try {
-        const userData = JSON.parse(savedUser);
+        const currentUser = await getUser();
+        localStorage.setItem('petcare_user', JSON.stringify(currentUser));
+        console.log(currentUser)
+        const userData = currentUser;
         setUser(userData);
         setIsAuthenticated(true);
         loadRoleSpecificData(userData);
       } catch (error) {
+        console.log(error)
         console.error('Error loading saved user:', error);
         localStorage.removeItem('petcare_user');
       }
-    }
-  }, []);
+    };
 
+    const currentUser = localStorage.getItem('petcare_user');
+    if (currentUser === null) {
+      getCurrentUser();
+    } else {
+      setIsAuthenticated(true);
+      setUser(JSON.parse(currentUser));
+    }
+
+  }, []);
+  useEffect(() => {
+    if (user) {
+      setCurrentRole({ ...INITIAL_CURRENT_ROLE, [user?.role]: true });
+    } else {
+      setCurrentRole({ ...INITIAL_CURRENT_ROLE });
+    }
+  }, [user])
   const loadRoleSpecificData = (userData: User) => {
     loadMockClinics();
     loadMockVeterinarians();
@@ -378,6 +404,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         clinics,
         currentView,
         isAuthenticated,
+        currentRole,
         login,
         logout,
         setCurrentView,

@@ -25,7 +25,7 @@ import {
   Stethoscope,
   ClipboardList
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // Navigation items for each role
 const adminNavigationItems = [
@@ -89,6 +89,10 @@ const getRoleLabel = (role: string) => {
 
 export function RoleSidebar() {
   const { user, currentView, setCurrentView, logout } = useApp();
+
+  useEffect(() => {
+    console.log("user:: ",user)
+  },[user]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (!user) return null;
@@ -188,7 +192,7 @@ export function RoleSidebar() {
             <p className="text-xs text-gray-500 truncate">{user?.email}</p>
             {user.role === 'veterinarian' && (
               <p className="text-xs text-gray-500 truncate">
-                License: {user.licenseNumber}
+                License: {user?.veterinarian_info?.license_number}
               </p>
             )}
           </div>

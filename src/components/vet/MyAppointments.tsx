@@ -10,10 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { 
-  Calendar as CalendarIcon, 
-  Clock, 
-  Search, 
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  Search,
   Filter,
   CheckCircle,
   XCircle,
@@ -25,6 +25,8 @@ import {
   Stethoscope,
   Plus
 } from 'lucide-react';
+import { useUpdateAppointmentStatus, useGetVetAppointments } from '../../lib/react-query/QueriesAndMutations';
+import { IAppointment } from '../../lib/types';
 
 interface Appointment {
   id: string;
@@ -46,104 +48,15 @@ interface Appointment {
 }
 
 export function MyAppointments() {
+  const { data: appointments } = useGetVetAppointments()
+  const { mutateAsync: updateStatus } = useUpdateAppointmentStatus()
+
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<IAppointment | null>(null);
   const [appointmentNotes, setAppointmentNotes] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
-
-  // Mock appointments data
-  const appointments: Appointment[] = [
-    {
-      id: '1',
-      date: '2025-01-20',
-      time: '09:00',
-      duration: 30,
-      petName: 'Buddy',
-      petSpecies: 'Dog',
-      petBreed: 'Golden Retriever',
-      ownerName: 'John Smith',
-      ownerPhone: '+1 (555) 123-4567',
-      ownerEmail: 'john.smith@email.com',
-      type: 'Annual Checkup',
-      status: 'scheduled',
-      priority: 'medium',
-      notes: 'Regular annual health examination',
-      chiefComplaint: 'Routine checkup',
-      petImageUrl: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=400&fit=crop'
-    },
-    {
-      id: '2',
-      date: '2025-01-20',
-      time: '10:30',
-      duration: 15,
-      petName: 'Max',
-      petSpecies: 'Dog',
-      petBreed: 'German Shepherd',
-      ownerName: 'Sarah Johnson',
-      ownerPhone: '+1 (555) 234-5678',
-      ownerEmail: 'sarah.johnson@email.com',
-      type: 'Vaccination',
-      status: 'in-progress',
-      priority: 'medium',
-      notes: 'Rabies and DHPP vaccines due',
-      chiefComplaint: 'Routine vaccination',
-      petImageUrl: 'https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?w=400&h=400&fit=crop'
-    },
-    {
-      id: '3',
-      date: '2025-01-20',
-      time: '11:15',
-      duration: 45,
-      petName: 'Luna',
-      petSpecies: 'Cat',
-      petBreed: 'Siamese',
-      ownerName: 'Mike Davis',
-      ownerPhone: '+1 (555) 345-6789',
-      ownerEmail: 'mike.davis@email.com',
-      type: 'Emergency',
-      status: 'scheduled',
-      priority: 'urgent',
-      notes: 'Possible toxin ingestion - requires immediate attention',
-      chiefComplaint: 'Vomiting, lethargy, loss of appetite',
-      petImageUrl: 'https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8?w=400&h=400&fit=crop'
-    },
-    {
-      id: '4',
-      date: '2025-01-20',
-      time: '14:00',
-      duration: 20,
-      petName: 'Whiskers',
-      petSpecies: 'Cat',
-      petBreed: 'Persian',
-      ownerName: 'Emily Chen',
-      ownerPhone: '+1 (555) 456-7890',
-      ownerEmail: 'emily.chen@email.com',
-      type: 'Follow-up',
-      status: 'scheduled',
-      priority: 'low',
-      notes: 'Post-surgery checkup',
-      chiefComplaint: 'Post-surgical recovery check'
-    },
-    {
-      id: '5',
-      date: '2025-01-19',
-      time: '15:30',
-      duration: 25,
-      petName: 'Rocky',
-      petSpecies: 'Dog',
-      petBreed: 'Bulldog',
-      ownerName: 'Tom Wilson',
-      ownerPhone: '+1 (555) 567-8901',
-      ownerEmail: 'tom.wilson@email.com',
-      type: 'Dental Cleaning',
-      status: 'completed',
-      priority: 'medium',
-      notes: 'Dental cleaning and oral health check',
-      chiefComplaint: 'Bad breath and tartar buildup'
-    }
-  ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -179,11 +92,11 @@ export function MyAppointments() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
@@ -191,61 +104,65 @@ export function MyAppointments() {
     const [hours, minutes] = timeString.split(':');
     const date = new Date();
     date.setHours(parseInt(hours), parseInt(minutes));
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit', 
-      hour12: true 
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
     });
   };
 
-  const filteredAppointments = appointments.filter(appointment => {
-    const matchesSearch = appointment.petName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         appointment.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         appointment.type.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredAppointments = appointments?.filter((appointment: IAppointment) => {
+    const matchesSearch = appointment.pet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      appointment.pet.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      appointment.type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || appointment.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const todayAppointments = filteredAppointments.filter(
-    appointment => appointment.date === new Date().toISOString().split('T')[0]
+  const todayAppointments = filteredAppointments?.filter(
+    (appointment: IAppointment) => appointment.date === new Date().toISOString().split('T')[0]
   );
 
-  const upcomingAppointments = filteredAppointments.filter(
-    appointment => new Date(appointment.date) > new Date()
+  const upcomingAppointments = filteredAppointments?.filter(
+    (appointment: IAppointment) => new Date(appointment.date) > new Date()
   );
 
-  const pastAppointments = filteredAppointments.filter(
-    appointment => new Date(appointment.date) < new Date()
+  const pastAppointments = filteredAppointments?.filter(
+    (appointment: IAppointment) => new Date(appointment.date) < new Date()
   );
 
-  const updateAppointmentStatus = (appointmentId: string, newStatus: Appointment['status']) => {
-    // In a real app, this would make an API call
-    console.log(`Updating appointment ${appointmentId} to status: ${newStatus}`);
+  const updateAppointmentStatus = async (appointmentId: number, newStatus: Appointment['status']) => {
+    try {
+      await updateStatus({ id: appointmentId, status: newStatus });
+      console.log(`Updating appointment ${appointmentId} to status: ${newStatus}`);
+    } catch (error) {
+      console.log(error)
+    }
   };
 
-  const AppointmentCard = ({ appointment }: { appointment: Appointment }) => (
+  const AppointmentCard = ({ appointment }: { appointment: IAppointment }) => (
     <Card className="mb-4 hover:shadow-md transition-shadow">
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4 flex-1">
             <Avatar className="h-16 w-16">
-              {appointment.petImageUrl ? (
-                <AvatarImage src={appointment.petImageUrl} alt={appointment.petName} />
+              {appointment.pet.image ? (
+                <AvatarImage src={appointment.pet.image} alt={appointment.pet.name} />
               ) : (
                 <AvatarFallback className="bg-blue-100">
-                  {appointment.petName.charAt(0)}
+                  {appointment.pet.name.charAt(0)}
                 </AvatarFallback>
               )}
             </Avatar>
-            
+
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-lg">{appointment.petName}</h3>
+                <h3 className="font-semibold text-lg">{appointment.pet.name}</h3>
                 <Badge className={getPriorityColor(appointment.priority)}>
-                  {appointment.priority.toUpperCase()}
+                  {appointment?.priority?.toUpperCase()}
                 </Badge>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <CalendarIcon className="h-4 w-4" />
@@ -261,34 +178,34 @@ export function MyAppointments() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
-                  {appointment.ownerName}
+                  {appointment.pet.user.name}
                 </div>
               </div>
-              
-              <div className="bg-gray-50 p-3 rounded-lg">
+
+              {/* <div className="bg-gray-50 p-3 rounded-lg">
                 <p className="text-sm font-medium text-gray-900 mb-1">Chief Complaint:</p>
                 <p className="text-sm text-gray-700">{appointment.chiefComplaint}</p>
-              </div>
+              </div> */}
             </div>
           </div>
-          
+
           <div className="flex flex-col items-end gap-3">
             <Badge className={getStatusColor(appointment.status)}>
               {appointment.status.replace('-', ' ').toUpperCase()}
             </Badge>
-            
+
             <div className="flex gap-2">
               {appointment.status === 'scheduled' && (
                 <>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="outline"
                     onClick={() => updateAppointmentStatus(appointment.id, 'in-progress')}
                   >
                     Start
                   </Button>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="outline"
                     onClick={() => updateAppointmentStatus(appointment.id, 'cancelled')}
                   >
@@ -296,20 +213,20 @@ export function MyAppointments() {
                   </Button>
                 </>
               )}
-              
+
               {appointment.status === 'in-progress' && (
-                <Button 
+                <Button
                   size="sm"
                   onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
                 >
                   Complete
                 </Button>
               )}
-              
+
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="outline"
                     onClick={() => setSelectedAppointment(appointment)}
                   >
@@ -319,33 +236,33 @@ export function MyAppointments() {
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle>Appointment Details - {appointment.petName}</DialogTitle>
+                    <DialogTitle>Appointment Details - {appointment.pet.name}</DialogTitle>
                   </DialogHeader>
-                  
+
                   <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label>Pet Information</Label>
                         <div className="space-y-2 mt-2">
-                          <p className="text-sm"><strong>Name:</strong> {appointment.petName}</p>
-                          <p className="text-sm"><strong>Species:</strong> {appointment.petSpecies}</p>
-                          <p className="text-sm"><strong>Breed:</strong> {appointment.petBreed}</p>
+                          <p className="text-sm"><strong>Name:</strong> {appointment.pet.name}</p>
+                          <p className="text-sm"><strong>Species:</strong> {appointment.pet.species}</p>
+                          <p className="text-sm"><strong>Breed:</strong> {appointment.pet.breed}</p>
                         </div>
                       </div>
-                      
+
                       <div>
                         <Label>Owner Information</Label>
                         <div className="space-y-2 mt-2">
-                          <p className="text-sm"><strong>Name:</strong> {appointment.ownerName}</p>
-                          <p className="text-sm"><strong>Phone:</strong> {appointment.ownerPhone}</p>
-                          <p className="text-sm"><strong>Email:</strong> {appointment.ownerEmail}</p>
+                          <p className="text-sm"><strong>Name:</strong> {appointment.pet.user.name}</p>
+                          <p className="text-sm"><strong>Phone:</strong> {appointment.pet.phone}</p>
+                          <p className="text-sm"><strong>Email:</strong> {appointment.pet.user.email}</p>
                         </div>
                       </div>
                     </div>
-                    
+
                     <div>
                       <Label>Appointment Notes</Label>
-                      <Textarea 
+                      <Textarea
                         className="mt-2"
                         placeholder="Add your clinical notes here..."
                         value={appointmentNotes}
@@ -353,7 +270,7 @@ export function MyAppointments() {
                         rows={4}
                       />
                     </div>
-                    
+
                     <div className="flex gap-2 justify-end">
                       <Button variant="outline">Save Notes</Button>
                       <Button>Complete Appointment</Button>
@@ -379,8 +296,8 @@ export function MyAppointments() {
           </h1>
           <p className="text-gray-600 mt-1">Manage your scheduled appointments and patient visits</p>
         </div>
-        
-        <div className="flex gap-2">
+
+        {/* <div className="flex gap-2">
           <Dialog open={showCalendar} onOpenChange={setShowCalendar}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -400,12 +317,12 @@ export function MyAppointments() {
               />
             </DialogContent>
           </Dialog>
-          
+
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             New Appointment
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* Filters */}
@@ -423,7 +340,7 @@ export function MyAppointments() {
                 />
               </div>
             </div>
-            
+
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-48">
                 <Filter className="h-4 w-4 mr-2" />
@@ -446,19 +363,19 @@ export function MyAppointments() {
       <Tabs defaultValue="today" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="today">
-            Today ({todayAppointments.length})
+            Today ({todayAppointments?.length})
           </TabsTrigger>
           <TabsTrigger value="upcoming">
-            Upcoming ({upcomingAppointments.length})
+            Upcoming ({upcomingAppointments?.length})
           </TabsTrigger>
           <TabsTrigger value="past">
-            Past ({pastAppointments.length})
+            Past ({pastAppointments?.length})
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="today" className="space-y-4">
-          {todayAppointments.length > 0 ? (
-            todayAppointments.map((appointment) => (
+          {todayAppointments?.length > 0 ? (
+            todayAppointments?.map((appointment: IAppointment) => (
               <AppointmentCard key={appointment.id} appointment={appointment} />
             ))
           ) : (
@@ -470,10 +387,10 @@ export function MyAppointments() {
             </Card>
           )}
         </TabsContent>
-        
+
         <TabsContent value="upcoming" className="space-y-4">
-          {upcomingAppointments.length > 0 ? (
-            upcomingAppointments.map((appointment) => (
+          {upcomingAppointments?.length > 0 ? (
+            upcomingAppointments?.map((appointment: IAppointment) => (
               <AppointmentCard key={appointment.id} appointment={appointment} />
             ))
           ) : (
@@ -485,10 +402,10 @@ export function MyAppointments() {
             </Card>
           )}
         </TabsContent>
-        
+
         <TabsContent value="past" className="space-y-4">
-          {pastAppointments.length > 0 ? (
-            pastAppointments.map((appointment) => (
+          {pastAppointments?.length > 0 ? (
+            pastAppointments?.map((appointment: IAppointment) => (
               <AppointmentCard key={appointment.id} appointment={appointment} />
             ))
           ) : (

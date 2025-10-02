@@ -7,15 +7,15 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { 
-  Search, 
-  Filter, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Calendar, 
-  Clock, 
+import {
+  Search,
+  Filter,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Calendar,
+  Clock,
   User,
   Stethoscope,
   CheckCircle,
@@ -30,38 +30,43 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Textarea } from '../ui/textarea';
+import { useGetAllAppointments, usePetOptions, useUpdateAppointment, useUpdateAppointmentStatus, useVetOptions } from '../../lib/react-query/QueriesAndMutations';
+import { IAppointment, INewAppointment, IPet, IUser } from '../../lib/types';
 
-interface Appointment {
-  id: string;
-  petId: string;
-  petName: string;
-  petSpecies: string;
-  ownerId: string;
-  ownerName: string;
-  ownerEmail: string;
-  ownerPhone: string;
-  veterinarianId: string;
-  veterinarianName: string;
-  clinicId: string;
-  clinicName: string;
-  date: string;
-  time: string;
-  duration: number; // in minutes
-  type: string;
-  status: 'scheduled' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
-  priority: 'low' | 'medium' | 'high' | 'emergency';
-  reason: string;
-  notes?: string;
-  followUpRequired: boolean;
-  followUpDate?: string;
-  cost?: number;
-  isPaid: boolean;
-  createdDate: string;
-  lastModified: string;
-}
+const INITIAL_APPOINTMENT: IAppointment = {
+  id: undefined,
+
+  pet_id: 0,
+  veterinarian_id: 0,
+  type: "",
+  clinic: "",
+  date: "",
+  time: "",
+  status: "scheduled",
+  priority: "normal",
+
+  duration: null,
+  notes: null,
+  condition: null,
+  symptoms: null,
+  time_waiting: null,
+
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+
+  pet: {} as IPet,
+  veterinarian: {} as IUser,
+};
+
 
 export function AllAppointments() {
   const { user } = useApp();
+  const { data: pets } = usePetOptions()
+  const { data: veterinarians } = useVetOptions()
+  const { data: appointments } = useGetAllAppointments()
+  const { mutateAsync: updateAppointment } = useUpdateAppointment()
+  const { mutateAsync: updateStatus } = useUpdateAppointmentStatus()
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
@@ -69,164 +74,10 @@ export function AllAppointments() {
   const [dateFilter, setDateFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [newAppointment, setNewAppointment] = useState({
-    petId: '',
-    veterinarianId: '',
-    clinicId: '',
-    date: '',
-    time: '',
-    duration: '30',
-    type: '',
-    priority: 'medium' as const,
-    reason: '',
-    notes: ''
-  });
-
-  // Mock data - in real app, this would come from API
-  const appointments: Appointment[] = [
-    {
-      id: '1',
-      petId: '1',
-      petName: 'Buddy',
-      petSpecies: 'Dog',
-      ownerId: 'owner1',
-      ownerName: 'John Smith',
-      ownerEmail: 'john.smith@email.com',
-      ownerPhone: '(555) 123-4567',
-      veterinarianId: 'vet1',
-      veterinarianName: 'Dr. Sarah Johnson',
-      clinicId: '1',
-      clinicName: 'PetCare Veterinary Clinic',
-      date: '2024-11-20',
-      time: '09:00',
-      duration: 30,
-      type: 'Routine Checkup',
-      status: 'scheduled',
-      priority: 'low',
-      reason: 'Annual wellness examination',
-      notes: 'Owner reports pet is eating well and active',
-      followUpRequired: false,
-      cost: 85.00,
-      isPaid: false,
-      createdDate: '2024-11-10',
-      lastModified: '2024-11-10'
-    },
-    {
-      id: '2',
-      petId: '2',
-      petName: 'Whiskers',
-      petSpecies: 'Cat',
-      ownerId: 'owner1',
-      ownerName: 'John Smith',
-      ownerEmail: 'john.smith@email.com',
-      ownerPhone: '(555) 123-4567',
-      veterinarianId: 'vet2',
-      veterinarianName: 'Dr. Michael Chen',
-      clinicId: '2',
-      clinicName: 'Animal Health Center',
-      date: '2024-11-18',
-      time: '14:30',
-      duration: 45,
-      type: 'Vaccination',
-      status: 'confirmed',
-      priority: 'medium',
-      reason: 'Annual FVRCP vaccination',
-      followUpRequired: true,
-      followUpDate: '2024-12-18',
-      cost: 45.00,
-      isPaid: true,
-      createdDate: '2024-11-05',
-      lastModified: '2024-11-15'
-    },
-    {
-      id: '3',
-      petId: '3',
-      petName: 'Max',
-      petSpecies: 'Dog',
-      ownerId: 'owner2',
-      ownerName: 'Sarah Johnson',
-      ownerEmail: 'sarah.johnson@email.com',
-      ownerPhone: '(555) 456-7890',
-      veterinarianId: 'vet1',
-      veterinarianName: 'Dr. Sarah Johnson',
-      clinicId: '1',
-      clinicName: 'PetCare Veterinary Clinic',
-      date: '2024-11-15',
-      time: '11:00',
-      duration: 60,
-      type: 'Surgery Consultation',
-      status: 'completed',
-      priority: 'high',
-      reason: 'Pre-surgery evaluation for hip dysplasia',
-      notes: 'Surgery scheduled for next week. Pre-op instructions given.',
-      followUpRequired: true,
-      followUpDate: '2024-11-22',
-      cost: 125.00,
-      isPaid: true,
-      createdDate: '2024-11-01',
-      lastModified: '2024-11-15'
-    },
-    {
-      id: '4',
-      petId: '4',
-      petName: 'Luna',
-      petSpecies: 'Cat',
-      ownerId: 'owner3',
-      ownerName: 'Emily Davis',
-      ownerEmail: 'emily.davis@email.com',
-      ownerPhone: '(555) 789-0123',
-      veterinarianId: 'vet3',
-      veterinarianName: 'Dr. Emily Rodriguez',
-      clinicId: '3',
-      clinicName: 'City Pet Hospital',
-      date: '2024-11-22',
-      time: '16:00',
-      duration: 30,
-      type: 'Emergency',
-      status: 'scheduled',
-      priority: 'emergency',
-      reason: 'Difficulty breathing, lethargy',
-      notes: 'Emergency appointment - possible respiratory infection',
-      followUpRequired: false,
-      cost: 200.00,
-      isPaid: false,
-      createdDate: '2024-11-22',
-      lastModified: '2024-11-22'
-    },
-    {
-      id: '5',
-      petId: '1',
-      petName: 'Buddy',
-      petSpecies: 'Dog',
-      ownerId: 'owner1',
-      ownerName: 'John Smith',
-      ownerEmail: 'john.smith@email.com',
-      ownerPhone: '(555) 123-4567',
-      veterinarianId: 'vet2',
-      veterinarianName: 'Dr. Michael Chen',
-      clinicId: '2',
-      clinicName: 'Animal Health Center',
-      date: '2024-11-12',
-      time: '10:00',
-      duration: 30,
-      type: 'Dental Cleaning',
-      status: 'no_show',
-      priority: 'medium',
-      reason: 'Routine dental cleaning and examination',
-      cost: 150.00,
-      isPaid: false,
-      createdDate: '2024-10-28',
-      lastModified: '2024-11-12'
-    }
-  ];
-
-  const veterinarians = [
-    { id: 'vet1', name: 'Dr. Sarah Johnson' },
-    { id: 'vet2', name: 'Dr. Michael Chen' },
-    { id: 'vet3', name: 'Dr. Emily Rodriguez' }
-  ];
+  const [isEditDialogOpen, setIsEditDialgoOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<IAppointment>(INITIAL_APPOINTMENT);
+  const [editAppointment, setEditAppointment] = useState<IAppointment>(INITIAL_APPOINTMENT);
 
   const appointmentTypes = [
     'Routine Checkup',
@@ -241,59 +92,93 @@ export function AllAppointments() {
     'Other'
   ];
 
-  const filteredAppointments = appointments.filter(appointment => {
-    const matchesSearch = appointment.petName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         appointment.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         appointment.veterinarianName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         appointment.reason.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || appointment.status === statusFilter;
-    const matchesPriority = priorityFilter === 'all' || appointment.priority === priorityFilter;
-    const matchesVeterinarian = veterinarianFilter === 'all' || appointment.veterinarianId === veterinarianFilter;
-    
+  const filteredAppointments = appointments?.filter((appointment: IAppointment) => {
+    const petName = appointment.pet?.name?.toLowerCase() || "";
+    const ownerName = appointment.pet?.user?.name?.toLowerCase() || "";
+    const veterinarianName = appointment.veterinarian?.name?.toLowerCase() || "";
+    const reason = appointment.condition?.toLowerCase() || "";
+
+    const matchesSearch =
+      petName.includes(searchTerm.toLowerCase()) ||
+      ownerName.includes(searchTerm.toLowerCase()) ||
+      veterinarianName.includes(searchTerm.toLowerCase()) ||
+      reason.includes(searchTerm.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "all" || appointment.status === statusFilter;
+
+    const matchesPriority =
+      priorityFilter === "all" || appointment.priority === priorityFilter;
+
+    const matchesVeterinarian =
+      veterinarianFilter === "all" ||
+      appointment.veterinarian_id === Number(veterinarianFilter);
+
     let matchesDate = true;
-    if (dateFilter !== 'all') {
+    if (dateFilter !== "all") {
       const appointmentDate = new Date(appointment.date);
       const today = new Date();
       switch (dateFilter) {
-        case 'today':
+        case "today":
           matchesDate = appointmentDate.toDateString() === today.toDateString();
           break;
-        case 'tomorrow':
+        case "tomorrow":
           const tomorrow = new Date(today);
           tomorrow.setDate(today.getDate() + 1);
           matchesDate = appointmentDate.toDateString() === tomorrow.toDateString();
           break;
-        case 'week':
+        case "week":
           const weekFromNow = new Date(today);
           weekFromNow.setDate(today.getDate() + 7);
-          matchesDate = appointmentDate >= today && appointmentDate <= weekFromNow;
+          matchesDate =
+            appointmentDate >= today && appointmentDate <= weekFromNow;
           break;
-        case 'past':
+        case "past":
           matchesDate = appointmentDate < today;
           break;
       }
     }
-    
-    return matchesSearch && matchesStatus && matchesPriority && matchesVeterinarian && matchesDate;
+
+    return (
+      matchesSearch &&
+      matchesStatus &&
+      matchesPriority &&
+      matchesVeterinarian &&
+      matchesDate
+    );
   });
 
-  const sortedAppointments = [...filteredAppointments].sort((a, b) => {
+  const sortedAppointments = [...(filteredAppointments || [])].sort((a, b) => {
     switch (sortBy) {
-      case 'date':
-        return new Date(a.date + ' ' + a.time).getTime() - new Date(b.date + ' ' + b.time).getTime();
-      case 'pet':
-        return a.petName.localeCompare(b.petName);
-      case 'owner':
-        return a.ownerName.localeCompare(b.ownerName);
-      case 'veterinarian':
-        return a.veterinarianName.localeCompare(b.veterinarianName);
-      case 'priority':
-        const priorityOrder = { emergency: 4, high: 3, medium: 2, low: 1 };
-        return priorityOrder[b.priority] - priorityOrder[a.priority];
+      case "date":
+        return (
+          new Date(a.date + " " + a.time).getTime() -
+          new Date(b.date + " " + b.time).getTime()
+        );
+      case "pet":
+        return (a.pet?.name || "").localeCompare(b.pet?.name || "");
+      case "owner":
+        return (a.pet?.user?.name || "").localeCompare(b.pet?.user?.name || "");
+      case "veterinarian":
+        return (a.veterinarian?.name || "").localeCompare(
+          b.veterinarian?.name || ""
+        );
+      case "priority":
+        const priorityOrder: Record<string, number> = {
+          emergency: 4,
+          high: 3,
+          medium: 2,
+          low: 1,
+        };
+        return (
+          (priorityOrder[b.priority || "medium"] || 0) -
+          (priorityOrder[a.priority || "medium"] || 0)
+        );
       default:
         return 0;
     }
   });
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -329,41 +214,46 @@ export function AllAppointments() {
     }
   };
 
-  const handleAddAppointment = () => {
-    // In real app, this would make an API call
-    console.log('Adding appointment:', newAppointment);
-    setIsAddDialogOpen(false);
-    setNewAppointment({
-      petId: '',
-      veterinarianId: '',
-      clinicId: '',
-      date: '',
-      time: '',
-      duration: '30',
-      type: '',
-      priority: 'medium',
-      reason: '',
-      notes: ''
-    });
-  };
-
-  const handleViewAppointment = (appointment: Appointment) => {
+  const handleViewAppointment = (appointment: IAppointment) => {
     setSelectedAppointment(appointment);
     setIsViewDialogOpen(true);
   };
 
-  const handleStatusChange = (appointmentId: string, newStatus: string) => {
-    // In real app, this would make an API call
-    console.log('Changing status for appointment', appointmentId, 'to', newStatus);
+  const handleEditAppointment = (appointment: IAppointment) => {
+    setEditAppointment(appointment);
+    setIsEditDialgoOpen(true);
+  };
+  const handleUpdateAppointment = async () => {
+    try {
+      await updateAppointment({
+        id: editAppointment.id as number,
+        data: editAppointment
+      })
+      setEditAppointment(INITIAL_APPOINTMENT)
+      setIsEditDialgoOpen(false);
+    } catch (error) {
+      console.log(error)
+    }
+  }
+  const handleStatusChange = async (appointmentId: number, newStatus: string) => {
+    try {
+      await updateStatus({
+        id: appointmentId as number,
+        status: newStatus
+      })
+      console.log('Changing status for appointment', appointmentId, 'to', newStatus);
+    } catch (error) {
+      console.log(error)
+    }
   };
 
-  const totalAppointments = appointments.length;
-  const todayAppointments = appointments.filter(a => {
+  const totalAppointments = appointments?.length;
+  const todayAppointments = appointments?.filter((a: IAppointment) => {
     const today = new Date().toDateString();
     return new Date(a.date).toDateString() === today;
   }).length;
-  const emergencyAppointments = appointments.filter(a => a.priority === 'emergency').length;
-  const pendingPayments = appointments.filter(a => !a.isPaid && a.cost && a.cost > 0).length;
+  const emergencyAppointments = appointments?.filter((a: IAppointment) => a.priority === 'emergency').length;
+  const pendingPayments = appointments?.filter((a: IAppointment) => !a.isPaid && a.cost && a.cost > 0).length;
 
   return (
     <div className="space-y-6">
@@ -382,7 +272,7 @@ export function AllAppointments() {
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          {/* <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-2" />
@@ -517,7 +407,7 @@ export function AllAppointments() {
                 </Button>
               </div>
             </DialogContent>
-          </Dialog>
+          </Dialog> */}
         </div>
       </div>
 
@@ -632,7 +522,7 @@ export function AllAppointments() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Vets</SelectItem>
-                {veterinarians.map(vet => (
+                {veterinarians?.map(vet => (
                   <SelectItem key={vet.id} value={vet.id}>
                     {vet.name}
                   </SelectItem>
@@ -669,31 +559,42 @@ export function AllAppointments() {
 
       {/* Appointment List */}
       <div className="grid gap-4">
-        {sortedAppointments.map((appointment) => (
+        {sortedAppointments?.map((appointment) => (
           <Card key={appointment.id} className="hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
                 <div className="flex flex-col items-center">
-                  <div className={`w-3 h-3 rounded-full ${getPriorityColor(appointment.priority)} mb-2`}></div>
+                  <div
+                    className={`w-3 h-3 rounded-full ${getPriorityColor(
+                      appointment.priority
+                    )} mb-2`}
+                  ></div>
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                     <Stethoscope className="w-6 h-6 text-blue-600" />
                   </div>
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <h3 className="font-medium text-gray-900">{appointment.type}</h3>
+                      <h3 className="font-medium text-gray-900">
+                        {appointment.type}
+                      </h3>
                       <p className="text-sm text-gray-600">
-                        {appointment.petName} ({appointment.petSpecies}) - {appointment.ownerName}
+                        {appointment.pet?.name} ({appointment.pet?.species}) -{" "}
+                        {appointment.pet?.user?.name}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge className={getStatusColor(appointment.status)}>
                         {getStatusIcon(appointment.status)}
-                        {appointment.status.replace('_', ' ').charAt(0).toUpperCase() + appointment.status.replace('_', ' ').slice(1)}
+                        {appointment.status
+                          .replace("_", " ")
+                          .charAt(0)
+                          .toUpperCase() +
+                          appointment.status.replace("_", " ").slice(1)}
                       </Badge>
-                      {appointment.priority === 'emergency' && (
+                      {appointment.priority === "emergency" && (
                         <Badge className="bg-red-100 text-red-800 border-red-200">
                           Emergency
                         </Badge>
@@ -719,83 +620,120 @@ export function AllAppointments() {
                     </div>
                     <div>
                       <p className="font-medium text-gray-900 mb-1">Veterinarian</p>
-                      <p className="text-gray-600">{appointment.veterinarianName}</p>
-                      <p className="text-gray-600 text-xs">{appointment.clinicName}</p>
+                      <p className="text-gray-600">
+                        {appointment.veterinarian?.name}
+                      </p>
+                      <p className="text-gray-600 text-xs">
+                        {appointment.clinic || "—"}
+                      </p>
                     </div>
                     <div>
                       <p className="font-medium text-gray-900 mb-1">Contact Info</p>
                       <div className="flex items-center gap-1">
                         <Phone className="w-3 h-3 text-gray-400" />
-                        <span className="text-gray-600 text-xs">{appointment.ownerPhone}</span>
+                        <span className="text-gray-600 text-xs">
+                          {appointment.pet?.user?.phone}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1 mt-1">
                         <Mail className="w-3 h-3 text-gray-400" />
-                        <span className="text-gray-600 text-xs">{appointment.ownerEmail}</span>
+                        <span className="text-gray-600 text-xs">
+                          {appointment.pet?.user?.email}
+                        </span>
                       </div>
                     </div>
                     <div>
                       <p className="font-medium text-gray-900 mb-1">Details</p>
-                      <p className="text-gray-600 text-xs">{appointment.reason}</p>
+                      <p className="text-gray-600 text-xs">
+                        {appointment.condition}
+                      </p>
                       {appointment.cost && (
                         <p className="text-gray-600 text-xs">
-                          Cost: ${appointment.cost} {appointment.isPaid ? '(Paid)' : '(Pending)'}
+                          Cost: ${appointment.cost}{" "}
+                          {appointment.isPaid ? "(Paid)" : "(Pending)"}
                         </p>
                       )}
                     </div>
                   </div>
 
                   <div className="flex gap-2 pt-4 border-t">
-                    <Button variant="outline" size="sm" onClick={() => handleViewAppointment(appointment)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewAppointment(appointment)}
+                    >
                       <Eye className="w-4 h-4 mr-1" />
                       View Details
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditAppointment(appointment)}
+                    >
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
-                    {appointment.status === 'scheduled' && (
-                      <Button 
-                        variant="outline" 
+                    {appointment.status === "scheduled" && (
+                      <Button
+                        variant="outline"
                         size="sm"
-                        onClick={() => handleStatusChange(appointment.id, 'confirmed')}
+                        onClick={() =>
+                          handleStatusChange(appointment.id, "confirmed")
+                        }
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
                         Confirm
                       </Button>
                     )}
-                    {appointment.status === 'confirmed' && (
-                      <Button 
-                        variant="outline" 
+                    {appointment.status === "confirmed" && (
+                      <Button
+                        variant="outline"
                         size="sm"
-                        onClick={() => handleStatusChange(appointment.id, 'in_progress')}
+                        onClick={() =>
+                          handleStatusChange(appointment.id, "in_progress")
+                        }
                       >
                         <Clock className="w-4 h-4 mr-1" />
                         Start
                       </Button>
                     )}
-                    {appointment.status === 'in_progress' && (
-                      <Button 
-                        variant="outline" 
+                    {appointment.status === "in_progress" && (
+                      <Button
+                        variant="outline"
                         size="sm"
-                        onClick={() => handleStatusChange(appointment.id, 'completed')}
+                        onClick={() =>
+                          handleStatusChange(appointment.id, "completed")
+                        }
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
                         Complete
                       </Button>
                     )}
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                      <XCircle className="w-4 h-4 mr-1" />
-                      Cancel
-                    </Button>
+                    {
+                      appointment.status !== 'cancelled' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() =>
+                            handleStatusChange(appointment.id, "cancelled")
+                          }
+                        >
+                          <XCircle className="w-4 h-4 mr-1" />
+                          Cancel
+                        </Button>
+                      )
+                    }
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
+
       </div>
 
-      {sortedAppointments.length === 0 && (
+      {sortedAppointments?.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
             <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -812,6 +750,198 @@ export function AllAppointments() {
           </CardContent>
         </Card>
       )}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialgoOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Update Appointment</DialogTitle>
+            <DialogDescription>
+              Modify the details of this appointment.
+            </DialogDescription>
+          </DialogHeader>
+
+          {
+            editAppointment && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="clinic">Clinic</Label>
+                  <Input
+                    id="clinic"
+                    value={editAppointment.clinic ?? ""}
+                    onChange={(e) =>
+                      setEditAppointment((prev) => ({ ...prev, clinic: e.target.value }))
+                    }
+                    placeholder="Clinic name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="type">Appointment Type</Label>
+                  <Select
+                    value={editAppointment.type ?? ""}
+                    onValueChange={(value) =>
+                      setEditAppointment((prev) => ({ ...prev, type: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {appointmentTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={editAppointment.date ?? ""}
+                    onChange={(e) =>
+                      setEditAppointment((prev) => ({ ...prev, date: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="time">Time</Label>
+                  <Input
+                    id="time"
+                    type="time"
+                    value={editAppointment.time ?? ""}
+                    onChange={(e) =>
+                      setEditAppointment((prev) => ({ ...prev, time: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="duration">Duration (minutes)</Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    min="15"
+                    max="180"
+                    value={editAppointment.duration ?? ""}
+                    onChange={(e) =>
+                      setEditAppointment((prev) => ({ ...prev, duration: Number(e.target.value) }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="priority">Priority</Label>
+                  <Select
+                    value={editAppointment.priority ?? ""}
+                    onValueChange={(value) =>
+                      setEditAppointment((prev) => ({ ...prev, priority: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={editAppointment.status ?? ""}
+                    onValueChange={(value) =>
+                      setEditAppointment((prev) => ({ ...prev, status: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="in-progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="condition">Condition</Label>
+                  <Input
+                    id="condition"
+                    value={editAppointment.condition ?? ""}
+                    onChange={(e) =>
+                      setEditAppointment((prev) => ({ ...prev, condition: e.target.value }))
+                    }
+                    placeholder="Condition / reason for visit"
+                  />
+                </div>
+
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="symptoms">Symptoms</Label>
+                  <Input
+                    id="symptoms"
+                    value={editAppointment.symptoms?.join(", ") ?? ""}
+                    onChange={(e) =>
+                      setEditAppointment((prev) => ({
+                        ...prev,
+                        symptoms: e.target.value.split(",").map((s) => s.trim()),
+                      }))
+                    }
+                    placeholder="Comma-separated symptoms"
+                  />
+                </div>
+
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="time_waiting">Time Waiting</Label>
+                  <Input
+                    id="time_waiting"
+                    value={editAppointment.time_waiting ?? ""}
+                    onChange={(e) =>
+                      setEditAppointment((prev) => ({ ...prev, time_waiting: e.target.value }))
+                    }
+                    placeholder="e.g. 30 minutes"
+                  />
+                </div>
+
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    value={editAppointment.notes ?? ""}
+                    onChange={(e) =>
+                      setEditAppointment((prev) => ({ ...prev, notes: e.target.value }))
+                    }
+                    placeholder="Additional notes or special instructions"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            )
+          }
+
+          <div className="flex justify-end gap-2 mt-6">
+            <Button
+              onClick={handleUpdateAppointment}
+              className=" text-white bg-black"
+            >
+              Update Appointment
+            </Button>
+            <Button variant="outline" onClick={() => setIsEditDialgoOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Appointment Details Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
@@ -824,10 +954,11 @@ export function AllAppointments() {
                   Appointment Details - {selectedAppointment.type}
                 </DialogTitle>
                 <DialogDescription>
-                  Complete information for appointment on {new Date(selectedAppointment.date).toLocaleDateString()}
+                  Complete information for appointment on{" "}
+                  {new Date(selectedAppointment.date).toLocaleDateString()}
                 </DialogDescription>
               </DialogHeader>
-              
+
               <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -835,18 +966,22 @@ export function AllAppointments() {
                   <TabsTrigger value="medical">Medical Notes</TabsTrigger>
                   <TabsTrigger value="billing">Billing</TabsTrigger>
                 </TabsList>
-                
+
+                {/* ✅ Overview Tab */}
                 <TabsContent value="overview" className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Date & Time</Label>
                       <p className="text-sm text-gray-600">
-                        {new Date(selectedAppointment.date).toLocaleDateString()} at {selectedAppointment.time}
+                        {new Date(selectedAppointment.date).toLocaleDateString()} at{" "}
+                        {selectedAppointment.time}
                       </p>
                     </div>
                     <div>
                       <Label>Duration</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.duration} minutes</p>
+                      <p className="text-sm text-gray-600">
+                        {selectedAppointment.duration} minutes
+                      </p>
                     </div>
                     <div>
                       <Label>Type</Label>
@@ -855,110 +990,127 @@ export function AllAppointments() {
                     <div>
                       <Label>Priority</Label>
                       <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${getPriorityColor(selectedAppointment.priority)}`}></div>
-                        <span className="text-sm text-gray-600 capitalize">{selectedAppointment.priority}</span>
+                        <div
+                          className={`w-3 h-3 rounded-full ${getPriorityColor(
+                            selectedAppointment.priority
+                          )}`}
+                        ></div>
+                        <span className="text-sm text-gray-600 capitalize">
+                          {selectedAppointment.priority}
+                        </span>
                       </div>
                     </div>
                     <div>
                       <Label>Status</Label>
                       <Badge className={getStatusColor(selectedAppointment.status)}>
                         {getStatusIcon(selectedAppointment.status)}
-                        {selectedAppointment.status.replace('_', ' ').charAt(0).toUpperCase() + selectedAppointment.status.replace('_', ' ').slice(1)}
+                        {selectedAppointment.status
+                          .replace("_", " ")
+                          .charAt(0)
+                          .toUpperCase() +
+                          selectedAppointment.status.replace("_", " ").slice(1)}
                       </Badge>
                     </div>
                     <div>
                       <Label>Veterinarian</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.veterinarianName}</p>
+                      <p className="text-sm text-gray-600">
+                        {selectedAppointment.veterinarian?.name}
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div>
                     <Label>Reason for Visit</Label>
                     <p className="text-sm text-gray-600 p-2 bg-gray-50 rounded">
-                      {selectedAppointment.reason}
+                      {selectedAppointment.condition}
                     </p>
                   </div>
                 </TabsContent>
-                
+
+                {/* ✅ Patient Info */}
                 <TabsContent value="patient" className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Pet Name</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.petName}</p>
+                      <p className="text-sm text-gray-600">{selectedAppointment.pet?.name}</p>
                     </div>
                     <div>
                       <Label>Species</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.petSpecies}</p>
+                      <p className="text-sm text-gray-600">{selectedAppointment.pet?.species}</p>
                     </div>
                     <div>
                       <Label>Owner Name</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.ownerName}</p>
+                      <p className="text-sm text-gray-600">{selectedAppointment.pet?.user?.name}</p>
                     </div>
                     <div>
                       <Label>Email</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.ownerEmail}</p>
+                      <p className="text-sm text-gray-600">{selectedAppointment.pet?.user?.email}</p>
                     </div>
                     <div>
                       <Label>Phone</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.ownerPhone}</p>
+                      <p className="text-sm text-gray-600">{selectedAppointment.pet?.user?.phone}</p>
                     </div>
                     <div>
                       <Label>Clinic</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.clinicName}</p>
+                      <p className="text-sm text-gray-600">{selectedAppointment.clinic || "—"}</p>
                     </div>
                   </div>
                 </TabsContent>
-                
+
+                {/* ✅ Medical Notes */}
                 <TabsContent value="medical" className="space-y-4">
                   <div>
                     <Label>Appointment Notes</Label>
                     <p className="text-sm text-gray-600 p-2 bg-gray-50 rounded">
-                      {selectedAppointment.notes || 'No notes available'}
+                      {selectedAppointment.notes || "No notes available"}
                     </p>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Follow-up Required</Label>
+                      <Label>Condition</Label>
                       <p className="text-sm text-gray-600">
-                        {selectedAppointment.followUpRequired ? 'Yes' : 'No'}
+                        {selectedAppointment.condition || "Not specified"}
                       </p>
                     </div>
-                    {selectedAppointment.followUpDate && (
-                      <div>
-                        <Label>Follow-up Date</Label>
-                        <p className="text-sm text-gray-600">
-                          {new Date(selectedAppointment.followUpDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
+                    <div>
+                      <Label>Symptoms</Label>
+                      <p className="text-sm text-gray-600">
+                        {selectedAppointment.symptoms?.length
+                          ? selectedAppointment.symptoms.join(", ")
+                          : "No symptoms provided"}
+                      </p>
+                    </div>
                   </div>
                 </TabsContent>
-                
+
+                {/* ✅ Billing */}
                 <TabsContent value="billing" className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Appointment Cost</Label>
                       <p className="text-sm text-gray-600">
-                        {selectedAppointment.cost ? `$${selectedAppointment.cost}` : 'Not set'}
+                        {selectedAppointment.cost ? `$${selectedAppointment.cost}` : "Not set"}
                       </p>
                     </div>
                     <div>
                       <Label>Payment Status</Label>
-                      <Badge variant={selectedAppointment.isPaid ? "default" : "outline"}>
-                        {selectedAppointment.isPaid ? 'Paid' : 'Pending'}
+                      <Badge
+                        variant={selectedAppointment.isPaid ? "default" : "outline"}
+                      >
+                        {selectedAppointment.isPaid ? "Paid" : "Pending"}
                       </Badge>
                     </div>
                     <div>
                       <Label>Created Date</Label>
                       <p className="text-sm text-gray-600">
-                        {new Date(selectedAppointment.createdDate).toLocaleDateString()}
+                        {new Date(selectedAppointment.created_at).toLocaleDateString()}
                       </p>
                     </div>
                     <div>
                       <Label>Last Modified</Label>
                       <p className="text-sm text-gray-600">
-                        {new Date(selectedAppointment.lastModified).toLocaleDateString()}
+                        {new Date(selectedAppointment.updated_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -968,6 +1120,7 @@ export function AllAppointments() {
           )}
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

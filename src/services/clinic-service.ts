@@ -1,10 +1,10 @@
-import { INewClinic } from "../lib/types";
+import { IClinic, INewClinic } from "../lib/types";
 import apiService from "./api/apiService";
 
 
 export const createNewClinic = async (data: INewClinic) => {
   try {
-    const res = await apiService.post('/clinics', data);
+    const res = await apiService.post('/admin/clinics', data);
     if (res.data.success) {
       return res.data.clinic;
     }
@@ -17,7 +17,7 @@ export const createNewClinic = async (data: INewClinic) => {
 
 export const getClinics = async () => {
   try {
-    const res = await apiService.get('/clinics');
+    const res = await apiService.get('/admin/clinics');
     return res.data;
   } catch (error) {
     console.error('Error fetching clinics:', error);
@@ -27,7 +27,7 @@ export const getClinics = async () => {
 
 export const getClinicById = async (id: string) => {
   try {
-    const res = await apiService.get(`/clinics/${id}`);
+    const res = await apiService.get(`/admin/clinics/${id}`);
     return res.data;
   } catch (error) {
     console.error('Error fetching clinic:', error);
@@ -35,9 +35,9 @@ export const getClinicById = async (id: string) => {
   }
 };
 
-export const updateClinic = async (id: string, data: Partial<INewClinic>) => {
+export const updateClinic = async (id: string, data:IClinic) => {
   try {
-    const res = await apiService.put(`/clinics/${id}`, data);
+    const res = await apiService.put(`/admin/clinics/${id}`, data);
     if (res.data.success) {
       return res.data.clinic;
     }
@@ -50,7 +50,7 @@ export const updateClinic = async (id: string, data: Partial<INewClinic>) => {
 
 export const deleteClinic = async (id: string) => {
   try {
-    const res = await apiService.delete(`/clinics/${id}`);
+    const res = await apiService.delete(`/admin/clinics/${id}`);
     return res.data.success;
   } catch (error) {
     console.error('Error deleting clinic:', error);

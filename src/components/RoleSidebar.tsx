@@ -58,7 +58,6 @@ const petOwnerNavigationItems = [
   { id: 'prescriptions', icon: Pill, label: 'Prescriptions' },
   { id: 'chatbot', icon: MessageCircle, label: 'AI Assistant' },
   { id: 'pet-history', icon: PawPrint, label: 'Pet History' },
-  { id: 'reports', icon: BarChart3, label: 'Reports & Analytics' }
 ];
 
 const getRoleColor = (role: string) => {

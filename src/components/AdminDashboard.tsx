@@ -6,42 +6,27 @@ import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { cn } from './ui/utils';
-import { 
-  Users, 
-  Building, 
-  PawPrint, 
-  Calendar, 
-  TrendingUp,
+import {
+  Users,
+  Building,
+  PawPrint,
+  Calendar,
   AlertTriangle,
   CheckCircle,
   UserCheck,
   Activity,
   BarChart3,
   Plus,
-  Edit,
-  Trash2,
   Eye,
-  Search
 } from 'lucide-react';
-import { useAdminDashboardTotals } from '../lib/react-query/QueriesAndMutations';
+import { useAdminDashboardTotals, useGetRecentUserRegistrations } from '../lib/react-query/QueriesAndMutations';
+import { IRecentUser } from '../lib/types';
 
 export function AdminDashboard() {
   const { user, pets, veterinarians, clinics, setCurrentView } = useApp();
-  const { data:totals ,isPending:isGettingTotals } = useAdminDashboardTotals()
-  // Mock system statistics
-  const systemStats = {
-    totalUsers: 1247,
-    totalPets: 892,
-    totalVeterinarians: 38,
-    totalClinics: 12,
-    totalAppointments: 156,
-    activeAppointments: 23,
-    completedAppointments: 133,
-    monthlyGrowth: 12.5,
-    systemHealth: 98.5
-  };
+  const { data: totals, isPending: isGettingTotals } = useAdminDashboardTotals()
+  const { data: recentUsers } = useGetRecentUserRegistrations()
 
-  // Mock recent activities
   const recentActivities = [
     {
       id: '1',
@@ -150,7 +135,7 @@ export function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totals?.users}</div>
-           
+
           </CardContent>
         </Card>
 
@@ -161,7 +146,7 @@ export function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totals?.pets}</div>
-           
+
           </CardContent>
         </Card>
 
@@ -172,113 +157,18 @@ export function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totals?.vets}</div>
-           
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Appointments</CardTitle>
-            <Activity className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{systemStats.systemHealth}%</div>
-            <p className="text-xs text-muted-foreground">
-              All services operational
-            </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* System Alerts */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              System Activity
-              <Button variant="outline" size="sm">
-                <Eye className="h-3 w-3 mr-1" />
-                View All
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className={cn("h-8 w-8 rounded-full flex items-center justify-center", getSeverityColor(activity.severity))}>
-                    {getActivityIcon(activity.type)}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{activity.description}</p>
-                    <p className="text-xs text-gray-500">{activity.timestamp}</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs">
-                    {activity.type.replace('_', ' ')}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2"
-              onClick={() => setCurrentView('manage-users')}
-            >
-              <Users className="h-4 w-4" />
-              Manage Users
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2"
-              onClick={() => setCurrentView('manage-vets')}
-            >
-              <UserCheck className="h-4 w-4" />
-              Manage Veterinarians
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2"
-              onClick={() => setCurrentView('manage-clinics')}
-            >
-              <Building className="h-4 w-4" />
-              Manage Clinics
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2"
-              onClick={() => setCurrentView('all-appointments')}
-            >
-              <Calendar className="h-4 w-4" />
-              View All Appointments
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2"
-              onClick={() => setCurrentView('system-reports')}
-            >
-              <BarChart3 className="h-4 w-4" />
-              Generate Reports
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Detailed Views */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Recent Users</TabsTrigger>
           <TabsTrigger value="appointments">Appointments</TabsTrigger>
-          <TabsTrigger value="alerts">System Alerts</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -291,15 +181,15 @@ export function AdminDashboard() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Total This Month</span>
-                    <span className="font-medium">{systemStats.totalAppointments}</span>
+                    <span className="font-medium">{totals?.totalAppointments}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Active</span>
-                    <span className="font-medium text-blue-600">{systemStats.activeAppointments}</span>
+                    <span className="font-medium text-blue-600">{totals?.activeAppointments}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Completed</span>
-                    <span className="font-medium text-green-600">{systemStats.completedAppointments}</span>
+                    <span className="font-medium text-green-600">{totals?.completedAppointments}</span>
                   </div>
                 </div>
               </CardContent>
@@ -338,22 +228,19 @@ export function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                {recentUsers?.map((user: IRecentUser) => (
+                  <div key={user.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarFallback>U{i + 1}</AvatarFallback>
+                        <AvatarFallback>{user.name[0].toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">User {i + 1}</p>
-                        <p className="text-sm text-gray-600">user{i + 1}@example.com</p>
+                        <p className="font-medium">{user.name}</p>
+                        <p className="text-sm text-gray-600">{user.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary">Pet Owner</Badge>
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-3 w-3" />
-                      </Button>
+                      <Badge variant="secondary">{user.role}</Badge>
                     </div>
                   </div>
                 ))}
@@ -372,7 +259,7 @@ export function AdminDashboard() {
                 <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                 <p>Appointment management interface</p>
                 <p className="text-sm">View and manage all system appointments</p>
-                <Button 
+                <Button
                   className="mt-4"
                   onClick={() => setCurrentView('all-appointments')}
                 >
@@ -382,44 +269,86 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="alerts" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Alerts & Notifications</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {systemAlerts.map((alert) => (
-                  <div key={alert.id} className={cn(
-                    "flex items-start gap-3 p-3 rounded-lg",
-                    alert.severity === 'warning' ? 'bg-amber-50 border border-amber-200' :
-                    alert.severity === 'success' ? 'bg-green-50 border border-green-200' :
-                    'bg-red-50 border border-red-200'
-                  )}>
-                    <div className={cn(
-                      "h-6 w-6 rounded-full flex items-center justify-center",
-                      alert.severity === 'warning' ? 'text-amber-600' :
-                      alert.severity === 'success' ? 'text-green-600' :
-                      'text-red-600'
-                    )}>
-                      {alert.severity === 'success' ? 
-                        <CheckCircle className="h-4 w-4" /> : 
-                        <AlertTriangle className="h-4 w-4" />
-                      }
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium">{alert.title}</h4>
-                      <p className="text-sm text-gray-600 mt-1">{alert.description}</p>
-                      <p className="text-xs text-gray-500 mt-1">{alert.timestamp}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              System Activity
+              <Button variant="outline" size="sm">
+                <Eye className="h-3 w-3 mr-1" />
+                View All
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentActivities.map((activity) => (
+                <div key={activity.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className={cn("h-8 w-8 rounded-full flex items-center justify-center", getSeverityColor(activity.severity))}>
+                    {getActivityIcon(activity.type)}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{activity.description}</p>
+                    <p className="text-xs text-gray-500">{activity.timestamp}</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {activity.type.replace('_', ' ')}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card> */}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={() => setCurrentView('manage-users')}
+            >
+              <Users className="h-4 w-4" />
+              Manage Users
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={() => setCurrentView('manage-vets')}
+            >
+              <UserCheck className="h-4 w-4" />
+              Manage Veterinarians
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={() => setCurrentView('manage-clinics')}
+            >
+              <Building className="h-4 w-4" />
+              Manage Clinics
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={() => setCurrentView('all-appointments')}
+            >
+              <Calendar className="h-4 w-4" />
+              View All Appointments
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={() => setCurrentView('system-reports')}
+            >
+              <BarChart3 className="h-4 w-4" />
+              Generate Reports
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

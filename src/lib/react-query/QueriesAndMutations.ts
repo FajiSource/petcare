@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
-import { IAdminTotals, INewAppointment, INewClinic, INewHealthRecord, INewMedicalNote, INewPet, INewPrescription, INewUser, INewVetUser } from "../types"
+import { IAdminTotals, INewAppointment, INewClinic, INewHealthRecord, INewMedicalNote, INewPet, INewPrescription, INewUser, INewVetUser, IRecentUser, ITopVet, IUserTrend } from "../types"
 import { addUser, addVetUser, deleteUser, getAllAdmins, getAllVets, getOwners, getUsers, updateStatus } from "../../services/user-service"
 import { QUERY_KEYS } from "./queryKeys"
-import { getAdminTotals } from "../../services/dashboard-service"
+import { getAdminTotals, getMonthlyAppoinments, getRecentUserRegistration, getTopVets, getUserTrends } from "../../services/analytics-service"
 import { addRecord, getAllVetRecords } from "../../services/veterinarian-services"
 import { addNewPet, getPets } from "../../services/pet-service"
 import { addNewPrescription, getOwnerPrescriptionRecords, getVetPrescriptionRecords } from "../../services/prescription-service"
@@ -28,11 +28,35 @@ export const useAddNewVetUser = () => {
         }
     })
 }
-
+// admin reports
 export const useAdminDashboardTotals = () => {
     return useQuery<IAdminTotals>({
         queryKey: [QUERY_KEYS.ADMIN_DB_TOTALS],
         queryFn: getAdminTotals
+    });
+}
+export const useGetMonthlyAppoinments = () => {
+    return useQuery({
+        queryKey: ['monthly-appointments'],
+        queryFn: getMonthlyAppoinments
+    });
+}
+export const useGetTopVets = () => {
+    return useQuery<ITopVet[]>({
+        queryKey: ['top-vets'],
+        queryFn: getTopVets
+    });
+}
+export const useGetUserTrends = () => {
+    return useQuery<IUserTrend[]>({
+        queryKey: ['user-trends'],
+        queryFn: getUserTrends
+    });
+}
+export const useGetRecentUserRegistrations = () => {
+    return useQuery<IRecentUser[]>({
+        queryKey: ['user-registrations'],
+        queryFn: getRecentUserRegistration
     });
 }
 
@@ -42,6 +66,7 @@ export const useGetAllAdmins = () => {
         queryFn: getAllAdmins
     });
 };
+
 export const useGetAllUsers = () => {
     return useQuery({
         queryKey: [QUERY_KEYS.GET_ALL_USERS],

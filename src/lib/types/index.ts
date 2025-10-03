@@ -126,6 +126,9 @@ export interface IAdminTotals {
   vets: number;
   appointments: number;
   completed_appointments: number;
+  totalAppointments: number;
+  activeAppointments: number;
+  completedAppointments: number;
 }
 
 export interface IPet {
@@ -365,19 +368,72 @@ export interface ICurrentRole {
 }
 
 export interface IClinic {
-  id: number;
+  id?: number | string;
   name: string;
   address: string;
   phone: string;
   email: string;
   isActive: boolean;
-  created_at: string;
-  updated_at: string;
+
+  operatingHours: Record<string, string>;
+  services: string[];
+  city: string;
+  state: string;
+  zipCode: string;
+  description: string;
+  licenseNumber: string;
+  website?: string | null;
+  totalStaff: number;
+  totalPatients: number;
+  establishedDate: string;
+  emergencyAvailable: boolean;
+
+  created_at?: string;
+  updated_at?: string;
 }
+
 export interface INewClinic {
   name: string;
   address: string;
   phone: string;
   email: string;
   isActive: boolean;
+
+  operatingHours?: Record<string, string>;
+  services?: string[];
+  city: string;
+  state: string;
+  zipCode: string;
+  description?: string;
+  licenseNumber: string;
+  website?: string | null;
+  totalStaff?: number;
+  totalPatients?: number;
+  establishedDate: string;
+  emergencyAvailable?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+
+export interface ITopVet {
+  id: number;
+  name: string;
+  total_appointments: number;
+  specialization: string;
+}
+
+export interface IUserTrend {
+  month: string;
+  total: number;
+  admins: string | number;
+  veterinarians: string | number;
+  petOwners: string | number;
+}
+
+export interface IRecentUser {
+  name: string;
+  id: number;
+  email: string;
+  role: string;
 }

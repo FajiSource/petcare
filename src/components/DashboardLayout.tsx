@@ -20,21 +20,9 @@ import { MyPatients } from './vet/MyPatients';
 import { MedicalNotes } from './vet/MedicalNotes';
 import { MyReports } from './vet/MyReports';
 import { PetOwnerReports } from './PetOwnerReports';
+import { ClinicManagement } from './admin/ClinicManagement';
 
-// Admin-specific components (placeholders for now implemented ones)
-function ManageClinics() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Manage Clinics</h1>
-        <p className="text-gray-600 mt-1">Clinic and facility management</p>
-      </div>
-      <div className="text-center py-12 text-gray-500">
-        <p>Clinic management interface coming soon!</p>
-      </div>
-    </div>
-  );
-}
+
 
 export function DashboardLayout() {
   const { currentView, user } = useApp();
@@ -56,9 +44,6 @@ export function DashboardLayout() {
         return <AIChatbot />;
       case 'pet-history':
         return <PetHistory />;
-      case 'reports':
-        return <PetOwnerReports />;
-      
       // Admin views
       case 'admin-dashboard':
         return <AdminDashboard />;
@@ -67,7 +52,7 @@ export function DashboardLayout() {
       case 'manage-vets':
         return <VeterinarianManagement />;
       case 'manage-clinics':
-        return <ManageClinics />;
+        return <ClinicManagement />;
       case 'all-pets':
         return <AllPets />;
       case 'all-appointments':

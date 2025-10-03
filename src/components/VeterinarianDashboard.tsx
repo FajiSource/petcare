@@ -26,10 +26,11 @@ export function VeterinarianDashboard() {
   // Mock veterinarian statistics
   const vetStats = {
     patientsToday: 8,
+    
+    pendingRecords: 3,
     totalPatients: 156,
     appointmentsToday: 12,
     completedToday: 7,
-    pendingRecords: 3,
     urgentCases: 1
   };
 

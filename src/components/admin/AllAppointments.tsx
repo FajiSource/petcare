@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from '../ui/dialog';
 import {
   Search,
-  Filter,
   Plus,
   Edit,
-  Trash2,
   Eye,
   Calendar,
   Clock,
-  User,
   Stethoscope,
   CheckCircle,
   XCircle,
@@ -26,12 +23,11 @@ import {
   Phone,
   Mail
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Textarea } from '../ui/textarea';
 import { useGetAllAppointments, usePetOptions, useUpdateAppointment, useUpdateAppointmentStatus, useVetOptions } from '../../lib/react-query/QueriesAndMutations';
-import { IAppointment, INewAppointment, IPet, IUser } from '../../lib/types';
+import { IAppointment,IPet, IUser } from '../../lib/types';
 
 const INITIAL_APPOINTMENT: IAppointment = {
   id: undefined,
@@ -60,10 +56,8 @@ const INITIAL_APPOINTMENT: IAppointment = {
 
 
 export function AllAppointments() {
-  const { user } = useApp();
-  const { data: pets } = usePetOptions()
   const { data: veterinarians } = useVetOptions()
-  const { data: appointments } = useGetAllAppointments()
+  const { data: appointments, refetch:loadAppointments } = useGetAllAppointments()
   const { mutateAsync: updateAppointment } = useUpdateAppointment()
   const { mutateAsync: updateStatus } = useUpdateAppointmentStatus()
 
@@ -268,7 +262,7 @@ export function AllAppointments() {
             <Download className="w-4 h-4 mr-2" />
             Export Schedule
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => loadAppointments()}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>

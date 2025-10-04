@@ -49,6 +49,36 @@ export const getVetAAppointments = async () => {
     }
 }
 
+export const getVetTodaySchedules = async () => {
+    try {
+        const res = await apiService.get("/appointments/veterinarian/today-schedules");
+        return res.data.data;
+    } catch (error) {
+        console.log(error)
+        throw error
+    }
+}
+
+export const getVetUrgents = async () => {
+    try {
+        const res = await apiService.get("/appointments/veterinarian/urgents");
+        return res.data.data;
+    } catch (error) {
+        console.log(error)
+        throw error
+    }
+}
+export const getVetRecents = async () => {
+    try {
+        const res = await apiService.get("/appointments/veterinarian/recents");
+        console.log("recents: ", res.data.data);
+        return res.data.data;
+    } catch (error) {
+        console.log(error)
+        throw error
+    }
+}
+
 export const getAllAppointments = async () => {
     try {
         const res = await apiService.get("/appointments");

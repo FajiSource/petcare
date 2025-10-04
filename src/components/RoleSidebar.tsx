@@ -48,7 +48,7 @@ const veterinarianNavigationItems = [
   { id: 'prescriptions', icon: Pill, label: 'Prescriptions' },
   { id: 'medical-notes', icon: ClipboardList, label: 'Medical Notes' },
   { id: 'chatbot', icon: MessageCircle, label: 'AI Assistant' },
-  { id: 'vet-reports', icon: BarChart3, label: 'My Reports' }
+  // { id: 'vet-reports', icon: BarChart3, label: 'My Reports' }
 ];
 
 const petOwnerNavigationItems = [

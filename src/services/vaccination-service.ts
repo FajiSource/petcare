@@ -6,7 +6,15 @@ import apiService from "./api/apiService";
 export const getVaccinations = async () => {
   try {
     const res = await apiService.get("/vaccinations");
-    console.log(res)
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching vaccinations:", error);
+    throw error;
+  }
+};
+export const getOwnerVaccinations = async () => {
+  try {
+    const res = await apiService.get("/vaccinations/owner");
     return res.data;
   } catch (error) {
     console.error("Error fetching vaccinations:", error);

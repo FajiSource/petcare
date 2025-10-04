@@ -129,9 +129,9 @@ export function VaccinationManagement() {
     return matchesSearch && matchesStatus && matchesSpecies;
   });
 
-  const completedVaccinations = vaccinations.filter(v => v.status === 'completed');
-  const dueSoonVaccinations = vaccinations.filter(v => v.status === 'due-soon');
-  const overdueVaccinations = vaccinations.filter(v => v.status === 'overdue');
+  const completedVaccinations = vaccinations.filter((v:IVaccination) => v.status === 'completed');
+  const dueSoonVaccinations = vaccinations.filter((v:IVaccination) => v.status === 'due-soon');
+  const overdueVaccinations = vaccinations.filter((v:IVaccination) => v.status === 'overdue');
 
   const handleAddVaccination = async () => {
     try {
@@ -143,7 +143,7 @@ export function VaccinationManagement() {
         patient_id: patient.id,
         patient_species: patient.species,
 
-        vaccine_name: newVaccination.vaccine_name,
+        vaccine_name: newVaccination.vaccine_name as string,
         vaccine_type: newVaccination.vaccine_type as 'core' | 'non-core' | 'rabies',
 
         manufacturer: newVaccination.manufacturer || '',

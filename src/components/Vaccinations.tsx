@@ -10,114 +10,45 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertCircle, Calendar, Clock, Plus, Search, Shield, Syringe } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
 import { Textarea } from './ui/textarea';
+import { getOwnerVaccinations } from '../services/vaccination-service';
+import { useGetOwnerVaccinations, usePetOptions } from '../lib/react-query/QueriesAndMutations';
+import { IVaccination } from '../lib/types';
 
-interface Vaccination {
-  id: string;
-  petName: string;
-  petId: string;
-  vaccineName: string;
-  vaccineType: string;
-  dateAdministered: string;
-  nextDueDate: string;
-  veterinarian: string;
-  batchNumber: string;
-  manufacturer: string;
-  notes: string;
-  status: 'current' | 'overdue' | 'upcoming';
-  sideEffects?: string;
-}
-
-interface Pet {
-  id: string;
-  name: string;
-  species: string;
-  breed: string;
-  age: string;
-}
 
 export function Vaccinations() {
   const { user } = useApp();
+  const { data: pets } = usePetOptions()
+  const { data: vaccinations } = useGetOwnerVaccinations()
+
+  const vaccinationsData = vaccinations as unknown as IVaccination[] | undefined;
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPet, setSelectedPet] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newVaccination, setNewVaccination] = useState({
-    petId: '',
-    vaccineName: '',
-    vaccineType: '',
-    dateAdministered: '',
-    nextDueDate: '',
-    batchNumber: '',
+  interface NewVaccinationForm {
+    patient_id?: string;
+    vaccine_name?: string;
+    vaccine_type?: string;
+    administered_date?: string;
+    next_due_date?: string;
+    batch_number?: string;
+    manufacturer?: string;
+    notes?: string;
+    reactions?: string;
+  }
+
+  const [newVaccination, setNewVaccination] = useState<NewVaccinationForm>({
+    patient_id: '',
+    vaccine_name: '',
+    vaccine_type: '',
+    administered_date: '',
+    next_due_date: '',
+    batch_number: '',
     manufacturer: '',
     notes: '',
-    sideEffects: ''
+    reactions: ''
   });
-
-  // Mock data - in real app, this would come from API
-  const pets: Pet[] = [
-    { id: '1', name: 'Buddy', species: 'Dog', breed: 'Golden Retriever', age: '3 years' },
-    { id: '2', name: 'Whiskers', species: 'Cat', breed: 'Persian', age: '2 years' },
-    { id: '3', name: 'Max', species: 'Dog', breed: 'German Shepherd', age: '5 years' },
-  ];
-
-  const vaccinations: Vaccination[] = [
-    {
-      id: '1',
-      petName: 'Buddy',
-      petId: '1',
-      vaccineName: 'DHPP',
-      vaccineType: 'Core Vaccine',
-      dateAdministered: '2024-06-15',
-      nextDueDate: '2025-06-15',
-      veterinarian: 'Dr. Smith',
-      batchNumber: 'VAC123456',
-      manufacturer: 'Merck Animal Health',
-      notes: 'Annual booster administered successfully',
-      status: 'current'
-    },
-    {
-      id: '2',
-      petName: 'Whiskers',
-      petId: '2',
-      vaccineName: 'FVRCP',
-      vaccineType: 'Core Vaccine',
-      dateAdministered: '2024-05-20',
-      nextDueDate: '2025-05-20',
-      veterinarian: 'Dr. Johnson',
-      batchNumber: 'VAC789012',
-      manufacturer: 'Zoetis',
-      notes: 'First annual booster for adult cat',
-      status: 'current'
-    },
-    {
-      id: '3',
-      petName: 'Max',
-      petId: '3',
-      vaccineName: 'Rabies',
-      vaccineType: 'Core Vaccine',
-      dateAdministered: '2023-12-10',
-      nextDueDate: '2024-12-10',
-      veterinarian: 'Dr. Wilson',
-      batchNumber: 'RAB345678',
-      manufacturer: 'Boehringer Ingelheim',
-      notes: 'Rabies vaccination - 3 year duration',
-      status: 'overdue'
-    },
-    {
-      id: '4',
-      petName: 'Buddy',
-      petId: '1',
-      vaccineName: 'Bordetella',
-      vaccineType: 'Non-Core Vaccine',
-      dateAdministered: '2024-09-01',
-      nextDueDate: '2025-03-01',
-      veterinarian: 'Dr. Smith',
-      batchNumber: 'BOR567890',
-      manufacturer: 'Merck Animal Health',
-      notes: 'Kennel cough prevention',
-      status: 'upcoming'
-    }
-  ];
 
   const vaccineTypes = [
     'Core Vaccine',
@@ -130,20 +61,25 @@ export function Vaccinations() {
     'Other'
   ];
 
-  const filteredVaccinations = vaccinations.filter(vaccination => {
-    const matchesSearch = vaccination.petName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         vaccination.vaccineName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPet = selectedPet === 'all' || vaccination.petId === selectedPet;
-    const matchesStatus = statusFilter === 'all' || vaccination.status === statusFilter;
-    
-    return matchesSearch && matchesPet && matchesStatus;
-  });
+  const filteredVaccinations = vaccinationsData?.filter((vaccination: IVaccination) => {
+    const matchesSearch = (vaccination.patient_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (vaccination.vaccine_name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPet = selectedPet === 'all' || String(vaccination.patient_id) === selectedPet;
+    // Map UI status filter (current/upcoming/overdue) to API status values
+    const matchesStatus = statusFilter === 'all'
+      || (statusFilter === 'current' && vaccination.status === 'completed')
+      || (statusFilter === 'upcoming' && vaccination.status === 'due-soon')
+      || (statusFilter === 'overdue' && vaccination.status === 'overdue');
 
+    return matchesSearch && matchesPet && matchesStatus;
+  }) ?? [];
+
+  // Map backend status values to UI colors
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'current': return 'bg-green-100 text-green-800 border-green-200';
+      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
       case 'overdue': return 'bg-red-100 text-red-800 border-red-200';
-      case 'upcoming': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'due-soon': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -153,19 +89,24 @@ export function Vaccinations() {
     console.log('Adding vaccination:', newVaccination);
     setIsAddDialogOpen(false);
     setNewVaccination({
-      petId: '',
-      vaccineName: '',
-      vaccineType: '',
-      dateAdministered: '',
-      nextDueDate: '',
-      batchNumber: '',
+      patient_id: '',
+      vaccine_name: '',
+      vaccine_type: '',
+      administered_date: '',
+      next_due_date: '',
+      batch_number: '',
       manufacturer: '',
       notes: '',
-      sideEffects: ''
+      reactions: ''
     });
   };
 
-  const upcomingVaccinations = vaccinations.filter(v => v.status === 'upcoming' || v.status === 'overdue');
+  const upcomingVaccinations = vaccinationsData?.filter((v: IVaccination) => v.status === 'due-soon' || v.status === 'overdue') || [];
+
+  const displayStatusLabel = (status: string) => {
+    if (!status) return '';
+    return status.replace('-', ' ').replace(/(^|\s)\w/g, c => c.toUpperCase());
+  };
 
   return (
     <div className="space-y-6">
@@ -193,7 +134,7 @@ export function Vaccinations() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="pet">Pet</Label>
-                  <Select value={newVaccination.petId} onValueChange={(value) => setNewVaccination(prev => ({ ...prev, petId: value }))}>
+                  <Select value={newVaccination.patient_id} onValueChange={(value: string) => setNewVaccination(prev => ({ ...prev, patient_id: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select pet" />
                     </SelectTrigger>
@@ -210,14 +151,14 @@ export function Vaccinations() {
                   <Label htmlFor="vaccineName">Vaccine Name</Label>
                   <Input
                     id="vaccineName"
-                    value={newVaccination.vaccineName}
-                    onChange={(e) => setNewVaccination(prev => ({ ...prev, vaccineName: e.target.value }))}
+                    value={newVaccination.vaccine_name}
+                    onChange={(e) => setNewVaccination(prev => ({ ...prev, vaccine_name: e.target.value }))}
                     placeholder="e.g., DHPP, Rabies"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="vaccineType">Vaccine Type</Label>
-                  <Select value={newVaccination.vaccineType} onValueChange={(value) => setNewVaccination(prev => ({ ...prev, vaccineType: value }))}>
+                  <Select value={newVaccination.vaccine_type} onValueChange={(value: string) => setNewVaccination(prev => ({ ...prev, vaccine_type: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
@@ -235,8 +176,8 @@ export function Vaccinations() {
                   <Input
                     id="dateAdministered"
                     type="date"
-                    value={newVaccination.dateAdministered}
-                    onChange={(e) => setNewVaccination(prev => ({ ...prev, dateAdministered: e.target.value }))}
+                    value={newVaccination.administered_date}
+                    onChange={(e) => setNewVaccination(prev => ({ ...prev, administered_date: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-2">
@@ -244,16 +185,16 @@ export function Vaccinations() {
                   <Input
                     id="nextDueDate"
                     type="date"
-                    value={newVaccination.nextDueDate}
-                    onChange={(e) => setNewVaccination(prev => ({ ...prev, nextDueDate: e.target.value }))}
+                    value={newVaccination.next_due_date}
+                    onChange={(e) => setNewVaccination(prev => ({ ...prev, next_due_date: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="batchNumber">Batch Number</Label>
                   <Input
                     id="batchNumber"
-                    value={newVaccination.batchNumber}
-                    onChange={(e) => setNewVaccination(prev => ({ ...prev, batchNumber: e.target.value }))}
+                    value={newVaccination.batch_number}
+                    onChange={(e) => setNewVaccination(prev => ({ ...prev, batch_number: e.target.value }))}
                     placeholder="Vaccine batch number"
                   />
                 </div>
@@ -280,8 +221,8 @@ export function Vaccinations() {
                   <Label htmlFor="sideEffects">Side Effects (if any)</Label>
                   <Textarea
                     id="sideEffects"
-                    value={newVaccination.sideEffects}
-                    onChange={(e) => setNewVaccination(prev => ({ ...prev, sideEffects: e.target.value }))}
+                    value={newVaccination.reactions}
+                    onChange={(e) => setNewVaccination(prev => ({ ...prev, reactions: e.target.value }))}
                     placeholder="Any observed side effects"
                     rows={2}
                   />
@@ -306,7 +247,7 @@ export function Vaccinations() {
           <AlertCircle className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
             You have {upcomingVaccinations.filter(v => v.status === 'overdue').length} overdue and{' '}
-            {upcomingVaccinations.filter(v => v.status === 'upcoming').length} upcoming vaccinations.
+            {upcomingVaccinations.filter(v => v.status === 'due-soon').length} upcoming vaccinations.
             <Button variant="link" className="p-0 h-auto text-yellow-800 underline ml-1">
               View details
             </Button>
@@ -346,8 +287,8 @@ export function Vaccinations() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="current">Current</SelectItem>
-                <SelectItem value="upcoming">Upcoming</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="due-soon">Due soon</SelectItem>
                 <SelectItem value="overdue">Overdue</SelectItem>
               </SelectContent>
             </Select>
@@ -357,7 +298,7 @@ export function Vaccinations() {
 
       {/* Vaccination Records */}
       <div className="grid gap-4">
-        {filteredVaccinations.map((vaccination) => (
+        {filteredVaccinations.map((vaccination: IVaccination) => (
           <Card key={vaccination.id} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
@@ -366,17 +307,17 @@ export function Vaccinations() {
                     <Syringe className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">{vaccination.vaccineName}</CardTitle>
+                    <CardTitle className="text-lg">{vaccination.vaccine_name}</CardTitle>
                     <CardDescription>
-                      {vaccination.petName} • {vaccination.vaccineType}
+                      {vaccination.patient_name} • {vaccination.vaccine_type}
                     </CardDescription>
                   </div>
                 </div>
                 <Badge className={getStatusColor(vaccination.status)}>
-                  {vaccination.status === 'current' && <Shield className="w-3 h-3 mr-1" />}
-                  {vaccination.status === 'upcoming' && <Clock className="w-3 h-3 mr-1" />}
+                  {vaccination.status === 'completed' && <Shield className="w-3 h-3 mr-1" />}
+                  {vaccination.status === 'due-soon' && <Clock className="w-3 h-3 mr-1" />}
                   {vaccination.status === 'overdue' && <AlertCircle className="w-3 h-3 mr-1" />}
-                  {vaccination.status.charAt(0).toUpperCase() + vaccination.status.slice(1)}
+                  {displayStatusLabel(vaccination.status)}
                 </Badge>
               </div>
             </CardHeader>
@@ -384,23 +325,23 @@ export function Vaccinations() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="font-medium text-gray-900 mb-1">Administration Details</p>
-                  <p className="text-gray-600">Date: {new Date(vaccination.dateAdministered).toLocaleDateString()}</p>
-                  <p className="text-gray-600">Veterinarian: {vaccination.veterinarian}</p>
-                  <p className="text-gray-600">Batch: {vaccination.batchNumber}</p>
+                  <p className="text-gray-600">Date: {vaccination.administered_date ? new Date(vaccination.administered_date).toLocaleDateString() : 'N/A'}</p>
+                  <p className="text-gray-600">Veterinarian: {vaccination.administered_by || 'N/A'}</p>
+                  <p className="text-gray-600">Batch: {vaccination.batch_number || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="font-medium text-gray-900 mb-1">Next Due</p>
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4 text-gray-400" />
-                    <p className="text-gray-600">{new Date(vaccination.nextDueDate).toLocaleDateString()}</p>
+                    <p className="text-gray-600">{vaccination.next_due_date ? new Date(vaccination.next_due_date).toLocaleDateString() : 'N/A'}</p>
                   </div>
-                  <p className="text-gray-600 mt-1">Manufacturer: {vaccination.manufacturer}</p>
+                  <p className="text-gray-600 mt-1">Manufacturer: {vaccination.manufacturer || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="font-medium text-gray-900 mb-1">Notes</p>
                   <p className="text-gray-600 text-xs">{vaccination.notes}</p>
-                  {vaccination.sideEffects && (
-                    <p className="text-red-600 text-xs mt-1">Side effects: {vaccination.sideEffects}</p>
+                  {vaccination.reactions && (
+                    <p className="text-red-600 text-xs mt-1">Side effects: {vaccination.reactions}</p>
                   )}
                 </div>
               </div>

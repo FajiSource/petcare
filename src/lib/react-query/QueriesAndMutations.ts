@@ -2,17 +2,17 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
 import { IAdminTotals, INewAppointment, INewClinic, INewHealthRecord, INewMedicalNote, INewPatient, INewPet, INewPrescription, INewUser, INewVaccination, INewVetUser, IPet, IRecentUser, ITopVet, IUserTrend, IVaccination } from "../types"
 import { addUser, addVetUser, deleteUser, getAllAdmins, getAllVets, getOwners, getUsers, updateStatus } from "../../services/user-service"
 import { QUERY_KEYS } from "./queryKeys"
-import { getAdminTotals, getMonthlyAppoinments, getRecentUserRegistration, getTopVets, getUserTrends } from "../../services/analytics-service"
+import { getAdminTotals, getMonthlyAppoinments, getRecentUserRegistration, getTopVets, getUserTrends, getVetTotals } from "../../services/analytics-service"
 import { addRecord, getAllVetRecords } from "../../services/veterinarian-services"
 import { addNewPet, getPets, getPatients, updatePet } from "../../services/pet-service"
 import { addNewPrescription, getOwnerPrescriptionRecords, getVetPrescriptionRecords } from "../../services/prescription-service"
 import { addNewNote, getVetNoteRecords } from "../../services/note-service"
-import { updateAppointmentStatus, createNewAppointment, getOwnerAppointments, getVetAAppointments, getAllAppointments, updateAppointment, rescheduleAppointment, cancelAppointment } from "../../services/appointment-service"
+import { updateAppointmentStatus, createNewAppointment, getOwnerAppointments, getVetAAppointments, getAllAppointments, updateAppointment, rescheduleAppointment, cancelAppointment, getVetTodaySchedules, getVetUrgents, getVetRecents } from "../../services/appointment-service"
 import { getClinicsSelections, getOwnersSelections, getPetSelections, getVetsSelections } from "../../services/selection-service"
 import { getOwnerRecords } from "../../services/owner-service"
 import { createNewClinic, deleteClinic, getClinicById, getClinics, updateClinic } from "../../services/clinic-service"
 import { createNewPatient, deletePatient, getVetPatients, updatePatient } from "../../services/patient-service"
-import { addNewVaccination, deleteVaccination, getVaccinations, updateVaccination } from "../../services/vaccination-service"
+import { addNewVaccination, deleteVaccination, getOwnerVaccinations, getVaccinations, updateVaccination } from "../../services/vaccination-service"
 
 
 export const useAddNewUser = () => {
@@ -205,6 +205,33 @@ export const useGetVetAppointments = () => {
         queryFn: getVetAAppointments,
     });
 };
+
+export const useGetVetTodaySchedules = () => {
+    return useQuery({
+        queryKey: ['today-schedules'],
+        queryFn: getVetTodaySchedules,
+        select: (data) => data ?? [],
+        initialData: []
+    });
+};
+export const useGetVetUrgents = () => {
+    return useQuery({
+        queryKey: ['urgent-cases'],
+        queryFn: getVetUrgents,
+        select: (data) => data ?? [],
+        initialData: []
+    });
+};
+
+export const useGetVetRecents = () => {
+    return useQuery({
+        queryKey: ['recent-cases'],
+        queryFn: getVetRecents,
+        select: (data) => data ?? [],
+        initialData: []
+    });
+};
+
 export const useGetAllAppointments = () => {
     return useQuery({
         queryKey: [QUERY_KEYS.GET_ALL_APPOINTMENTS],
@@ -288,6 +315,8 @@ export const useVetOptions = () => {
     return useQuery({
         queryKey: ['vets-options'],
         queryFn: getVetsSelections,
+        select: (data) => data? data : [],
+        initialData: []
     });
 };
 
@@ -295,6 +324,8 @@ export const useOwnerOptions = () => {
     return useQuery({
         queryKey: ['owner-options'],
         queryFn: getOwnersSelections,
+        select: (data) => data? data : [],
+        initialData: []
     });
 };
 
@@ -302,6 +333,8 @@ export const useClinicOptions = () => {
     return useQuery({
         queryKey: [QUERY_KEYS.GET_CLINICS_OPTIONS],
         queryFn: getClinicsSelections,
+        select: (data) => data? data : [],
+        initialData: []
     });
 };
 
@@ -311,6 +344,8 @@ export const useGetClinics = () => {
     return useQuery({
         queryKey: [QUERY_KEYS.GET_CLINICS],
         queryFn: getClinics,
+        select: (data) => data? data : [],
+        initialData: []
     });
 };
 
@@ -419,6 +454,15 @@ export function useGetVaccinations() {
     });
 }
 
+export function useGetOwnerVaccinations() {
+    return useQuery({
+        queryKey: [QUERY_KEYS.GET_OWNER_VACCINATIONS],
+        queryFn: getOwnerVaccinations,
+        select: (data) => data ?? [],
+        initialData: [],
+    });
+}
+
 export function useAddVaccination() {
     const queryClient = useQueryClient();
 
@@ -450,5 +494,17 @@ export function useDeleteVaccination() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VACCINATIONS] });
         },
+    });
+}
+
+
+// vet analytics
+
+export function useGetVetTotals() {
+    return useQuery({
+        queryKey: ['vet-totals'],
+        queryFn: getVetTotals,
+        select: (data) => data ?? [],
+        initialData: [],
     });
 }

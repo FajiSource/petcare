@@ -72,8 +72,8 @@ export function DashboardLayout() {
         return <MyPatients />;
       case 'medical-notes':
         return <MedicalNotes />;
-      case 'vet-reports':
-        return <MyReports />;
+      // case 'vet-reports':
+      //   return <MyReports />;
       case 'vaccinations-management':
         return <VaccinationManagement />;
 

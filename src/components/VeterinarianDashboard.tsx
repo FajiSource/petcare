@@ -19,114 +19,36 @@ import {
   Users,
   Activity
 } from 'lucide-react';
+import { useGetVetRecents, useGetVetTodaySchedules, useGetVetTotals, useGetVetUrgents, useUpdateAppointmentStatus } from '../lib/react-query/QueriesAndMutations';
+import { IAppointment } from '../lib/types';
 
 export function VeterinarianDashboard() {
   const { user, pets, setCurrentView } = useApp();
-
-  // Mock veterinarian statistics
-  const vetStats = {
-    patientsToday: 8,
-    
-    pendingRecords: 3,
-    totalPatients: 156,
-    appointmentsToday: 12,
-    completedToday: 7,
-    urgentCases: 1
-  };
-
-  // Mock today's appointments
-  const todayAppointments = [
-    {
-      id: '1',
-      time: '09:00 AM',
-      petName: 'Buddy',
-      ownerName: 'John Smith',
-      type: 'Annual Checkup',
-      status: 'confirmed',
-      duration: 30,
-      notes: 'Routine health examination'
-    },
-    {
-      id: '2',
-      time: '10:30 AM',
-      petName: 'Max',
-      ownerName: 'Sarah Johnson',
-      type: 'Vaccination',
-      status: 'in-progress',
-      duration: 15,
-      notes: 'Rabies and DHPP vaccines'
-    },
-    {
-      id: '3',
-      time: '11:15 AM',
-      petName: 'Luna',
-      ownerName: 'Mike Davis',
-      type: 'Emergency',
-      status: 'urgent',
-      duration: 45,
-      notes: 'Possible toxin ingestion'
-    },
-    {
-      id: '4',
-      time: '02:00 PM',
-      petName: 'Whiskers',
-      ownerName: 'Emily Chen',
-      type: 'Follow-up',
-      status: 'confirmed',
-      duration: 20,
-      notes: 'Post-surgery check'
+  const { data:vetStats , refetch:loadVetTotals} = useGetVetTotals()
+  const { data:todayAppointments, refetch:loadTodayAppointments  } = useGetVetTodaySchedules()
+  const { data:urgentCases , refetch:loadUrgentCases } = useGetVetUrgents()
+  const { data:recentPatients , refetch:laodRecentPatients } = useGetVetRecents()
+  const { mutateAsync:attendNow} = useUpdateAppointmentStatus()
+ 
+ 
+  const handleAttentNow = async (selectedCase:IAppointment) => {
+    try {
+        await attendNow({
+          id: selectedCase.id  as number,
+          status: 'confirmed'
+        })
+        toast.success(`Attending to ${selectedCase.pet?.name ?? `pet #${selectedCase.pet_id}`}`);
+        loadTodayAppointments()
+        loadUrgentCases()
+        loadVetTotals()
+    } catch (error) {
+      toast.success(`something went wrong.`);
     }
-  ];
-
-  // Mock recent patients
-  const recentPatients = [
-    {
-      id: '1',
-      name: 'Buddy',
-      species: 'Dog',
-      breed: 'Golden Retriever',
-      owner: 'John Smith',
-      lastVisit: '2025-08-10',
-      status: 'healthy',
-      imageUrl: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=400&fit=crop'
-    },
-    {
-      id: '2',
-      name: 'Max',
-      species: 'Dog',
-      breed: 'German Shepherd',
-      owner: 'Sarah Johnson',
-      lastVisit: '2025-08-09',
-      status: 'treatment',
-      imageUrl: 'https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?w=400&h=400&fit=crop'
-    },
-    {
-      id: '3',
-      name: 'Luna',
-      species: 'Cat',
-      breed: 'Siamese',
-      owner: 'Mike Davis',
-      lastVisit: '2025-08-08',
-      status: 'follow-up',
-      imageUrl: 'https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8?w=400&h=400&fit=crop'
-    }
-  ];
-
-  // Mock urgent cases
-  const urgentCases = [
-    {
-      id: '1',
-      petName: 'Rex',
-      ownerName: 'Tom Wilson',
-      condition: 'Possible poisoning',
-      priority: 'high',
-      timeWaiting: '15 minutes',
-      symptoms: ['Vomiting', 'Lethargy', 'Loss of appetite']
-    }
-  ];
-
+  }
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'scheduled':
+        return 'bg-blue-100 text-blue-800';
       case 'confirmed':
         return 'bg-blue-100 text-blue-800';
       case 'in-progress':
@@ -245,33 +167,55 @@ export function VeterinarianDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {urgentCases.map((case_) => (
-              <div key={case_.id} className="flex items-center justify-between p-3 bg-white rounded border border-red-200">
-                <div>
-                  <h4 className="font-medium text-red-900">{case_.petName} - {case_.ownerName}</h4>
-                  <p className="text-sm text-red-700">{case_.condition}</p>
-                  <p className="text-xs text-red-600 mt-1">
-                    Symptoms: {case_.symptoms.join(', ')}
-                  </p>
+            {urgentCases.map((case_) => {
+              // symptoms may come as a JSON string or an array
+              let symptomsList: string[] = [];
+              try {
+                if (typeof case_.symptoms === 'string') {
+                  const parsed = JSON.parse(case_.symptoms);
+                  if (Array.isArray(parsed)) symptomsList = parsed;
+                } else if (Array.isArray(case_.symptoms)) {
+                  symptomsList = case_.symptoms;
+                }
+              } catch (e) {
+                // fallback: treat as raw string
+                symptomsList = [String(case_.symptoms)];
+              }
+
+              return (
+                <div key={case_.id} className="flex items-center justify-between p-3 bg-white rounded border border-red-200">
+                  <div>
+                    <h4 className="font-medium text-red-900">{case_.pet?.name ?? `Pet #${case_.pet_id}` } - {case_.pet?.species ?? 'Unknown'}</h4>
+                    <p className="text-sm text-red-700">{case_.condition ?? case_.type}</p>
+                    <p className="text-xs text-red-600 mt-1">
+                      Symptoms: {symptomsList.length > 0 ? symptomsList.join(', ') : 'None reported'}
+                    </p>
+                    {case_.clinic && (
+                      <p className="text-xs text-red-600 mt-1">Clinic: {case_.clinic}</p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <Badge className="bg-red-100 text-red-800 mb-2">
+                      {String(case_.priority ?? '').toUpperCase() || 'N/A'}
+                    </Badge>
+                    <p className="text-xs text-red-600">Waiting: {case_.time_waiting ?? '—'}</p>
+                    {case_.notes && (
+                      <p className="text-xs text-red-600 mt-1">Notes: {case_.notes}</p>
+                    )}
+                    {case_.veterinarian_id && (
+                      <p className="text-xs text-red-600 mt-1">Vet ID: {case_.veterinarian_id}</p>
+                    )}
+                    <Button 
+                      size="sm" 
+                      className="mt-2 bg-red-600 hover:bg-red-700"
+                      onClick={() => handleAttentNow(case_)}
+                    >
+                      Attend Now
+                    </Button>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <Badge className="bg-red-100 text-red-800 mb-2">
-                    {case_.priority.toUpperCase()}
-                  </Badge>
-                  <p className="text-xs text-red-600">Waiting: {case_.timeWaiting}</p>
-                  <Button 
-                    size="sm" 
-                    className="mt-2 bg-red-600 hover:bg-red-700"
-                    onClick={() => {
-                      toast.success(`Attending to ${case_.petName} - ${case_.condition}`);
-                      // In a real app, this would mark case as attended and navigate to patient
-                    }}
-                  >
-                    Attend Now
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       )}
@@ -289,32 +233,50 @@ export function VeterinarianDashboard() {
                 View All
               </Button>
             </CardTitle>
+            <div className="mt-1 text-sm text-gray-600">Clinic: Animal Health Center</div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {todayAppointments.map((appointment) => (
+              {(todayAppointments || []).map((appointment: any) => (
                 <div key={appointment.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="text-center">
-                      <div className="text-sm font-medium">{appointment.time}</div>
-                      <div className="text-xs text-gray-500">{appointment.duration}min</div>
+                      <div className="text-sm font-medium">{appointment.time || '—'}</div>
+                      <div className="text-xs text-gray-500">{appointment.duration ? `${appointment.duration} min` : '—'}</div>
                     </div>
                     <div>
-                      <p className="font-medium">{appointment.petName}</p>
-                      <p className="text-sm text-gray-600">{appointment.ownerName}</p>
+                      <p className="font-medium">{appointment.pet?.name ?? `Pet #${appointment.pet_id ?? '—'}`}</p>
+                      <p className="text-sm text-gray-600">{appointment.pet?.species ?? 'Unknown species'}</p>
                       <p className="text-xs text-gray-500">{appointment.type}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge className={getStatusColor(appointment.status)}>
-                      {appointment.status.replace('-', ' ')}
-                    </Badge>
+                    <div className="flex items-center justify-end gap-2">
+                      <Badge className={getStatusColor(appointment.status)}>
+                        {(appointment.status || '').toString().replace('-', ' ')}
+                      </Badge>
+                      {appointment.priority && (
+                        <Badge className={
+                          appointment.priority === 'high' ? 'bg-red-100 text-red-800' :
+                          appointment.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-green-100 text-green-800'
+                        }>
+                          {appointment.priority.toUpperCase()}
+                        </Badge>
+                      )}
+                    </div>
+                    {appointment.notes && (
+                      <p className="text-xs text-gray-500 mt-1">Notes: {appointment.notes}</p>
+                    )}
+                    {appointment.veterinarian_id && (
+                      <p className="text-xs text-gray-500 mt-1">Vet ID: {appointment.veterinarian_id}</p>
+                    )}
                     {appointment.status === 'in-progress' && (
                       <Button 
                         size="sm" 
                         className="mt-1 ml-2"
                         onClick={() => {
-                          toast.info(`Continuing appointment with ${appointment.petName}`);
+                          toast.info(`Continuing appointment with ${appointment.pet?.name ?? 'patient'}`);
                           setCurrentView('health-records');
                         }}
                       >
@@ -343,41 +305,60 @@ export function VeterinarianDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentPatients.map((patient) => (
-                <div key={patient.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={patient.imageUrl} alt={patient.name} />
-                      <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{patient.name}</p>
-                      <p className="text-sm text-gray-600">{patient.breed} • {patient.owner}</p>
-                      <p className="text-xs text-gray-500">
-                        Last visit: {new Date(patient.lastVisit).toLocaleDateString()}
-                      </p>
+              {(recentPatients || []).map((patient: any) => {
+                // calculate age from date_of_birth
+                let ageLabel = 'Unknown';
+                if (patient?.date_of_birth) {
+                  const dob = new Date(patient.date_of_birth);
+                  const now = new Date();
+                  let years = now.getFullYear() - dob.getFullYear();
+                  const m = now.getMonth() - dob.getMonth();
+                  if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) years--;
+                  if (years > 0) ageLabel = `${years} yr${years > 1 ? 's' : ''}`;
+                  else {
+                    const days = Math.floor((now.getTime() - dob.getTime()) / (1000 * 60 * 60 * 24));
+                    ageLabel = `${days} day${days !== 1 ? 's' : ''}`;
+                  }
+                }
+
+                return (
+                  <div key={patient.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={patient.imageUrl ?? undefined} alt={patient.name} />
+                        <AvatarFallback>{(patient.name || 'U').charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{patient.name}</p>
+                        <p className="text-sm text-gray-600">{patient.breed ?? '—'} • {patient.species ?? '—'}</p>
+                        <p className="text-xs text-gray-500">Age: {ageLabel} • Weight: {patient.weight ?? '—'} kg</p>
+                        <p className="text-xs text-gray-500">Owner: {patient.owner_name ?? patient.owner_email ?? '—'}</p>
+                        <p className="text-xs text-gray-500">Phone: {patient.owner_phone ?? '—'}</p>
+                        <p className="text-xs text-gray-500">Microchip: {patient.microchip_id ?? '—'}</p>
+                        <p className="text-xs text-gray-500">Registered: {patient.registrationDate ? new Date(patient.registrationDate).toLocaleString() : '—'}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge className={getPatientStatusColor(patient.status)}>
+                        {patient.status ?? '—'}
+                      </Badge>
+                      <div className="mt-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            toast.info(`Opening medical records for ${patient.name}`);
+                            setCurrentView('health-records');
+                          }}
+                        >
+                          <FileText className="h-3 w-3 mr-1" />
+                          Records
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <Badge className={getPatientStatusColor(patient.status)}>
-                      {patient.status}
-                    </Badge>
-                    <div className="mt-1">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          toast.info(`Opening medical records for ${patient.name}`);
-                          setCurrentView('health-records');
-                        }}
-                      >
-                        <FileText className="h-3 w-3 mr-1" />
-                        Records
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -414,14 +395,14 @@ export function VeterinarianDashboard() {
               <Calendar className="h-6 w-6" />
               <span>Schedule</span>
             </Button>
-            <Button 
+            {/* <Button 
               variant="outline" 
               className="h-24 flex-col gap-2"
               onClick={() => setCurrentView('vet-reports')}
             >
               <Activity className="h-6 w-6" />
               <span>My Reports</span>
-            </Button>
+            </Button> */}
           </div>
         </CardContent>
       </Card>

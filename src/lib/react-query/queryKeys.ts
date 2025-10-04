@@ -1,8 +1,8 @@
 export const QUERY_KEYS = {
-    ADMIN_DB_TOTALS : 'getAdminTotals',
-    GET_ALL_ADMINS : 'getAllAdmins',
-    GET_ALL_VETS : 'getAllVets',
-    GET_ALL_VET_RECORDS : 'getAllVetRecords',
+    ADMIN_DB_TOTALS: 'getAdminTotals',
+    GET_ALL_ADMINS: 'getAllAdmins',
+    GET_ALL_VETS: 'getAllVets',
+    GET_ALL_VET_RECORDS: 'getAllVetRecords',
     GET_ALL_USERS: "getUsers",
     GET_ALL_OWNERS: "getOwners",
     GET_PETS: "getPets",
@@ -10,7 +10,10 @@ export const QUERY_KEYS = {
     GET_VET_NOTES: "getVetNoteRecords",
     GET_OWNER_APPOINTMENTS: "getOwnerAppointments",
     GET_VET_APPOINTMENTS: "getVetAAppointments",
-    GET_ALL_APPOINTMENTS : 'getAllAppointments',
-    GET_CLINICS_OPTIONS : "getClinicsSelections",
-    GET_CLINICS: "getClinics"
+    GET_ALL_APPOINTMENTS: 'getAllAppointments',
+    GET_CLINICS_OPTIONS: "getClinicsSelections",
+    GET_CLINICS: "getClinics",
+    GET_PATIENTS: "getPatients",
+    GET_VET_PATIENTS: "getVetPatients",
+    GET_VACCINATIONS: "GET_VACCINATIONS",
 };

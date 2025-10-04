@@ -21,6 +21,7 @@ import { MedicalNotes } from './vet/MedicalNotes';
 import { MyReports } from './vet/MyReports';
 import { PetOwnerReports } from './PetOwnerReports';
 import { ClinicManagement } from './admin/ClinicManagement';
+import { VaccinationManagement } from './vet/VaccinationManagement';
 
 
 
@@ -61,7 +62,7 @@ export function DashboardLayout() {
         return <SystemReports />;
       case 'system-settings':
         return <SystemSettings />;
-      
+
       // Veterinarian views
       case 'vet-dashboard':
         return <VeterinarianDashboard />;
@@ -73,7 +74,9 @@ export function DashboardLayout() {
         return <MedicalNotes />;
       case 'vet-reports':
         return <MyReports />;
-      
+      case 'vaccinations-management':
+        return <VaccinationManagement />;
+
       // Default fallback based on role
       default:
         if (user?.role === 'admin') {
@@ -89,7 +92,7 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen bg-gray-50">
       <RoleSidebar />
-      
+
       {/* Main Content */}
       <div className="lg:pl-72">
         <main className="py-6 px-4 sm:px-6 lg:px-8">

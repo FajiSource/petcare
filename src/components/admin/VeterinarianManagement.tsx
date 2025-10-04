@@ -87,7 +87,7 @@ export function VeterinarianManagement() {
       statusFilter === 'all' || vet.status === statusFilter;
 
     const matchesSpecialization =
-      specializationFilter === 'all' || vet.veterinarian_info.specialization === specializationFilter;
+      specializationFilter === 'all' || vet.veterinarian_info?.specialization === specializationFilter;
 
     return matchesSearch && matchesClinic && matchesStatus && matchesSpecialization;
   });
@@ -220,7 +220,7 @@ export function VeterinarianManagement() {
               <div>
                 <label className="text-sm font-medium">Specialization</label>
                 <Select
-                  value={newVet.specialization}
+                  value={newVet?.specialization}
                   onValueChange={(value) =>
                     setNewVet(prev => ({ ...prev, specialization: value }))
                   }
@@ -497,7 +497,7 @@ export function VeterinarianManagement() {
                 </Avatar>
                 <div>
                   <h3 className="text-xl font-semibold">{selectedVet.name}</h3>
-                  <p className="text-gray-600">{selectedVet.veterinarian_info.specialization}</p>
+                  <p className="text-gray-600">{selectedVet.veterinarian_info?.specialization}</p>
 
                 </div>
               </div>

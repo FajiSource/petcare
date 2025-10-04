@@ -1,16 +1,18 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
-import { IAdminTotals, INewAppointment, INewClinic, INewHealthRecord, INewMedicalNote, INewPet, INewPrescription, INewUser, INewVetUser, IRecentUser, ITopVet, IUserTrend } from "../types"
+import { IAdminTotals, INewAppointment, INewClinic, INewHealthRecord, INewMedicalNote, INewPatient, INewPet, INewPrescription, INewUser, INewVaccination, INewVetUser, IPet, IRecentUser, ITopVet, IUserTrend, IVaccination } from "../types"
 import { addUser, addVetUser, deleteUser, getAllAdmins, getAllVets, getOwners, getUsers, updateStatus } from "../../services/user-service"
 import { QUERY_KEYS } from "./queryKeys"
 import { getAdminTotals, getMonthlyAppoinments, getRecentUserRegistration, getTopVets, getUserTrends } from "../../services/analytics-service"
 import { addRecord, getAllVetRecords } from "../../services/veterinarian-services"
-import { addNewPet, getPets } from "../../services/pet-service"
+import { addNewPet, getPets, getPatients, updatePet } from "../../services/pet-service"
 import { addNewPrescription, getOwnerPrescriptionRecords, getVetPrescriptionRecords } from "../../services/prescription-service"
 import { addNewNote, getVetNoteRecords } from "../../services/note-service"
-import { updateAppointmentStatus, createNewAppointment, getOwnerAppointments, getVetAAppointments, getAllAppointments, updateAppointment } from "../../services/appointment-service"
+import { updateAppointmentStatus, createNewAppointment, getOwnerAppointments, getVetAAppointments, getAllAppointments, updateAppointment, rescheduleAppointment, cancelAppointment } from "../../services/appointment-service"
 import { getClinicsSelections, getOwnersSelections, getPetSelections, getVetsSelections } from "../../services/selection-service"
 import { getOwnerRecords } from "../../services/owner-service"
 import { createNewClinic, deleteClinic, getClinicById, getClinics, updateClinic } from "../../services/clinic-service"
+import { createNewPatient, deletePatient, getVetPatients, updatePatient } from "../../services/patient-service"
+import { addNewVaccination, deleteVaccination, getVaccinations, updateVaccination } from "../../services/vaccination-service"
 
 
 export const useAddNewUser = () => {
@@ -132,10 +134,17 @@ export const useGetAllPets = () => {
         queryFn: getPets
     });
 };
+
+export const useGetVetPatients = () => {
+    return useQuery({
+        queryKey: [QUERY_KEYS.GET_VET_PATIENTS],
+        queryFn: getPatients
+    });
+};
 export const useAddNewPet = () => {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (data: INewPet) => addNewPet(data),
+        mutationFn: (data: INewPatient) => addNewPet(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_PETS] });
         }
@@ -213,12 +222,35 @@ export const useUpdateAppointment = () => {
         },
     });
 };
+export const useRescheduleAppointment = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, date, time }: { id: number; date: string; time: string }) =>
+            rescheduleAppointment(id, { date, time }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_APPOINTMENTS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_OWNER_APPOINTMENTS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VET_APPOINTMENTS] });
+        },
+    });
+};
 
+export const useCancelAppointment = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: number) => cancelAppointment(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_APPOINTMENTS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_OWNER_APPOINTMENTS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VET_APPOINTMENTS] });
+        },
+    });
+};
 
 export const useUpdateAppointmentStatus = () => {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: ({ id , status }: { id: number, status:string }) => updateAppointmentStatus({ id , status }),
+        mutationFn: ({ id, status }: { id: number, status: string }) => updateAppointmentStatus({ id, status }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VET_APPOINTMENTS] });
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_OWNER_APPOINTMENTS] });
@@ -247,6 +279,8 @@ export const usePetOptions = () => {
     return useQuery({
         queryKey: ['pets-options'],
         queryFn: getPetSelections,
+        select: (data) => data? data : [],
+        initialData: []
     });
 };
 
@@ -280,6 +314,8 @@ export const useGetClinics = () => {
     });
 };
 
+
+
 export const useCreateNewClinic = () => {
     const queryClient = useQueryClient()
     return useMutation({
@@ -291,22 +327,128 @@ export const useCreateNewClinic = () => {
 }
 
 export const useUpdateClinic = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<INewClinic> }) =>
-      updateClinic(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_CLINICS] });
-    },
-  });
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: Partial<INewClinic> }) =>
+            updateClinic(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_CLINICS] });
+        },
+    });
 };
 
 export const useDeleteClinic = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteClinic(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_CLINICS] });
-    },
-  });
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => deleteClinic(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_CLINICS] });
+        },
+    });
 };
+
+
+// patient
+
+export const useGetPatients = () => {
+    return useQuery<IPet[]>({
+        queryKey: [QUERY_KEYS.GET_PATIENTS],
+        queryFn: getPatients,
+    });
+};
+// export const useGetVetPatients = () => {
+//     return useQuery({
+//         queryKey: [QUERY_KEYS.GET_VET_PATIENTS],
+//         queryFn: getVetPatients,
+//     });
+// };
+export const useCreateNewPatient = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: INewPatient) => createNewPatient(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_PATIENTS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VET_PATIENTS] });
+        },
+    });
+};
+
+export const useUpdatePatient = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: Partial<INewPatient> }) =>
+            updatePatient(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VET_PATIENTS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_PATIENTS] });
+        },
+    });
+};
+
+export const useDeletePatient = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => deletePatient(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VET_PATIENTS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_PATIENTS] });
+        },
+    });
+};
+
+export function useUpdatePet() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, data }: { id: number; data: INewPatient }) =>
+            updatePet(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_PATIENTS] });
+        },
+    });
+}
+
+
+// vaccinations
+export function useGetVaccinations() {
+    return useQuery({
+        queryKey: [QUERY_KEYS.GET_VACCINATIONS],
+        queryFn: getVaccinations,
+        select: (data) => data ?? [],
+        initialData: [],
+    });
+}
+
+export function useAddVaccination() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data: INewVaccination) => addNewVaccination(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VACCINATIONS] });
+        },
+    });
+}
+
+export function useUpdateVaccination() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, data }: { id: number; data: IVaccination }) =>
+            updateVaccination(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VACCINATIONS] });
+        },
+    });
+}
+
+export function useDeleteVaccination() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: number) => deleteVaccination(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VACCINATIONS] });
+        },
+    });
+}

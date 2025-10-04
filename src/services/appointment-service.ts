@@ -71,3 +71,29 @@ export const updateAppointment = async (id: number, data: Partial<IAppointment>)
         throw error;
     }
 };
+
+export const rescheduleAppointment = async (id: number, data: { date: string; time: string }) => {
+    try {
+        const res = await apiService.post(`/appointments/${id}/reschedule`, data);
+        if (res.data.status) {
+            return res.data.data; // the updated appointment
+        }
+        return null;
+    } catch (error) {
+        console.error("Error rescheduling appointment:", error);
+        throw error;
+    }
+};
+
+export const cancelAppointment = async (id: number) => {
+    try {
+        const res = await apiService.post(`/appointments/${id}/cancel`);
+        if (res.data.status) {
+            return res.data.data;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error cancelling appointment:", error);
+        throw error;
+    }
+};

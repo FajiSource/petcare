@@ -86,6 +86,7 @@ export const getUsers = async () => {
 export const getAllVets = async () => {
     try {
         const res = await apiService.get('/users/veterinarians');
+        console.log(res)
         if (res.data.status === 'success') {
             return res.data.vets;
         }

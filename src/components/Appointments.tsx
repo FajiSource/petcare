@@ -20,44 +20,41 @@ import {
   Trash2
 } from 'lucide-react';
 import { IAppointment, IClinic, INewAppointment } from '../lib/types';
-import { useClinicOptions, useCreateNewAppointment, useGetAllPets, useGetOwnerAppointments, usePetOptions, useVetOptions } from '../lib/react-query/QueriesAndMutations';
+import { useCancelAppointment, useClinicOptions, useCreateNewAppointment, useGetAllPets, useGetOwnerAppointments, usePetOptions, useUpdateAppointment, useVetOptions } from '../lib/react-query/QueriesAndMutations';
 
-interface Appointment {
-  id: string;
-  petId: string;
-  petName: string;
-  type: string;
-  date: string;
-  time: string;
-  veterinarian: string;
-  clinic: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
-  notes?: string;
-}
+export const INITIAL_NEW_APPOINTMENT: INewAppointment = {
+  veterinarianId: 0,
 
-const INITIAL_NEW_APPOINTMENT = {
-  pet_id: 0,
-  veterinarian_id: 0,
+  petName: "",
+  species: "",
+  breed: null,
+
   type: "",
   clinic: "",
   date: "",
   time: "",
 
   notes: null,
-  priority: null,
+  priority: "medium",
   duration: null,
   condition: null,
-  symptoms: null,
-  time_waiting: null,
-}
+  symptoms: [],
+  timeWaiting: null,
+
+  ownerPhone: "",
+  ownerAddress: "",
+};
 export function Appointments() {
   const { mutateAsync: createAppointment, isPending: isCreatingNewAppointment } = useCreateNewAppointment()
-  const { data: appointments, isPending: isGettingAppointments } = useGetOwnerAppointments()
-  const { data:clinics } = useClinicOptions()
+  const { data: appointments, isPending: isGettingAppointments, refetch: refreshAppointments } = useGetOwnerAppointments()
+  const { data: clinics } = useClinicOptions()
   const { data: pets, isPending: isGettingPets } = usePetOptions()
   const { data: vets, isPending: isGettingVets } = useVetOptions()
+  const { mutate: updateAppointment } = useUpdateAppointment();
+  const { mutate: cancelAppointment } = useCancelAppointment();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState<any | null>(null);
 
 
   const [newAppointment, setNewAppointment] = useState<INewAppointment>(INITIAL_NEW_APPOINTMENT);
@@ -83,7 +80,37 @@ export function Appointments() {
       toast.success(`Appointment scheduled - ${new Date(newAppointment.date).toLocaleDateString()}`);
     } catch (error) {
       console.log(error)
+      if(error?.response?.data?.message){
+        toast.error(error?.response?.data?.message)
+      }
     }
+  };
+
+
+  const handleUpdateAppointment = (appointment: any) => {
+    updateAppointment(
+      { id: appointment.id, data: appointment },
+      {
+        onSuccess: () => {
+          toast.success("Appointment updated successfully!");
+          setEditingAppointment(null);
+        },
+        onError: () => {
+          toast.error("Failed to update appointment");
+        },
+      }
+    );
+  };
+
+  const handleCancelAppointment = (id: number | string) => {
+    cancelAppointment(id, {
+      onSuccess: () => {
+        toast.success("Appointment cancelled");
+      },
+      onError: () => {
+        toast.error("Failed to cancel appointment");
+      },
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -126,6 +153,7 @@ export function Appointments() {
     : [];
 
 
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -134,6 +162,50 @@ export function Appointments() {
           <h1 className="text-2xl font-semibold text-gray-900">Appointments</h1>
           <p className="text-gray-600 mt-1">Manage your pet's appointments and schedules</p>
         </div>
+        <Dialog open={!!editingAppointment} onOpenChange={() => setEditingAppointment(null)}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Edit / Reschedule Appointment</DialogTitle>
+            </DialogHeader>
+
+            {editingAppointment && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+                {/* Example: update date and time only, but you can reuse full form */}
+                <FormInput
+                  id="editDate"
+                  name="editDate"
+                  type="date"
+                  label="Date"
+                  value={editingAppointment.date}
+                  onChange={(e) =>
+                    setEditingAppointment((prev: any) => ({ ...prev, date: e.target.value }))
+                  }
+                />
+                <FormInput
+                  id="editTime"
+                  name="editTime"
+                  type="time"
+                  label="Time"
+                  value={editingAppointment.time}
+                  onChange={(e) =>
+                    setEditingAppointment((prev: any) => ({ ...prev, time: e.target.value }))
+                  }
+                />
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditingAppointment(null)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => handleUpdateAppointment(editingAppointment)}
+              >
+                Save Changes
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -142,37 +214,49 @@ export function Appointments() {
               Schedule Appointment
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle>Schedule New Appointment</DialogTitle>
             </DialogHeader>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-              {/* Left Side */}
+              {/* Left Side - Pet Info */}
               <div className="space-y-4">
-                {/* Pet */}
-                <div>
-                  <label className="text-sm font-medium">Select Pet</label>
-                  <Select
-                    value={String(newAppointment.pet_id)}
-                    onValueChange={(value) =>
-                      setNewAppointment((prev) => ({ ...prev, pet_id: Number(value) }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a pet" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pets?.map((pet) => (
-                        <SelectItem key={pet.id} value={String(pet.id)}>
-                          {pet.name} ({pet.species})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <FormInput
+                  id="petName"
+                  name="petName"
+                  type="text"
+                  label="Pet Name"
+                  value={newAppointment.petName}
+                  onChange={(e) =>
+                    setNewAppointment((prev) => ({ ...prev, petName: e.target.value }))
+                  }
+                  required
+                />
 
-                {/* Appointment Type */}
+                <FormInput
+                  id="species"
+                  name="species"
+                  type="text"
+                  label="Species"
+                  value={newAppointment.species}
+                  onChange={(e) =>
+                    setNewAppointment((prev) => ({ ...prev, species: e.target.value }))
+                  }
+                  required
+                />
+
+                <FormInput
+                  id="breed"
+                  name="breed"
+                  type="text"
+                  label="Breed"
+                  value={newAppointment.breed ?? ""}
+                  onChange={(e) =>
+                    setNewAppointment((prev) => ({ ...prev, breed: e.target.value }))
+                  }
+                />
+
                 <div>
                   <label className="text-sm font-medium">Appointment Type</label>
                   <Select
@@ -194,7 +278,6 @@ export function Appointments() {
                   </Select>
                 </div>
 
-                {/* Date / Time */}
                 <div className="grid grid-cols-2 gap-2">
                   <FormInput
                     id="date"
@@ -221,17 +304,17 @@ export function Appointments() {
                 </div>
               </div>
 
-              {/* Right Side */}
+              {/* Right Side - Owner & Clinic Info */}
               <div className="space-y-4">
                 {/* Veterinarian */}
                 <div>
                   <label className="text-sm font-medium">Veterinarian</label>
                   <Select
-                    value={String(newAppointment.veterinarian_id)}
+                    value={String(newAppointment.veterinarianId ?? "")}
                     onValueChange={(value) =>
                       setNewAppointment((prev) => ({
                         ...prev,
-                        veterinarian_id: Number(value),
+                        veterinarianId: Number(value),
                       }))
                     }
                   >
@@ -261,14 +344,37 @@ export function Appointments() {
                       <SelectValue placeholder="Select clinic" />
                     </SelectTrigger>
                     <SelectContent>
-                      {clinics?.map((clinic:IClinic) => (
-                        <SelectItem key={clinic} value={clinic.name}>
+                      {clinics?.map((clinic: IClinic) => (
+                        <SelectItem key={clinic.id} value={clinic.name}>
                           {clinic.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+
+
+                <FormInput
+                  id="ownerPhone"
+                  name="ownerPhone"
+                  type="text"
+                  label="Owner Phone"
+                  value={newAppointment.ownerPhone ?? ""}
+                  onChange={(e) =>
+                    setNewAppointment((prev) => ({ ...prev, ownerPhone: e.target.value }))
+                  }
+                />
+
+                <FormInput
+                  id="ownerAddress"
+                  name="ownerAddress"
+                  type="text"
+                  label="Owner Address"
+                  value={newAppointment.ownerAddress ?? ""}
+                  onChange={(e) =>
+                    setNewAppointment((prev) => ({ ...prev, ownerAddress: e.target.value }))
+                  }
+                />
 
                 {/* Notes */}
                 <div>
@@ -285,7 +391,6 @@ export function Appointments() {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
@@ -295,6 +400,8 @@ export function Appointments() {
               </Button>
             </div>
           </DialogContent>
+
+
 
         </Dialog>
       </div>
@@ -359,17 +466,24 @@ export function Appointments() {
                     <Badge className={getStatusColor(appointment.status)}>
                       {appointment.status}
                     </Badge>
+
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        toast.info(`Editing appointment for ${appointment.pet.name}`);
-                        // open edit modal here
-                      }}
+                      onClick={() => setEditingAppointment(appointment)}
                     >
                       <Edit className="h-3 w-3" />
                     </Button>
+
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleCancelAppointment(appointment.id)}
+                    >
+                      Cancel
+                    </Button>
                   </div>
+
                 </div>
               ))}
             </div>

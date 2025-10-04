@@ -43,6 +43,7 @@ const veterinarianNavigationItems = [
   { id: 'vet-dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { id: 'my-appointments', icon: Calendar, label: 'My Appointments' },
   { id: 'my-patients', icon: PawPrint, label: 'My Patients' },
+  { id: 'vaccinations-management', icon: Syringe, label: 'Vaccinations' },
   { id: 'health-records', icon: FileText, label: 'Health Records' },
   { id: 'prescriptions', icon: Pill, label: 'Prescriptions' },
   { id: 'medical-notes', icon: ClipboardList, label: 'Medical Notes' },

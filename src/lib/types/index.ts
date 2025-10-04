@@ -131,26 +131,49 @@ export interface IAdminTotals {
   completedAppointments: number;
 }
 
-export interface IPet {
-  age: number;
-  allergies: string;
-  birthdate: string;
-  breed: string;
-  created_at: string
-  emergency_contact: string;
-  id: string;
-  imageUrl: string;
-  medical_condition: string;
+export interface IEmergencyContact {
   name: string;
-  notes: string;
   phone: string;
-  species: string;
-  updated_at: string;
-  user: IUser;
-  user_id: number;
-  weight: string;
-  image: string;
+  relationship: string;
 }
+
+export interface IPet {
+  id: number;
+  owner_id: number;
+  vet_id?: number;
+
+  name: string;
+  species: string;
+  breed: string;
+  gender: string;
+  date_of_birth: string;
+  age: number;
+  weight: string;
+  color: string;
+  microchip_id?: string;
+
+  imageUrl?: string;
+  image?: string;
+  owner_name?: string;
+  owner_phone?: string;
+  owner_email?: string;
+  owner_address?: string;
+
+  emergency_contact?: IEmergencyContact;
+
+  allergies?: string[];
+  conditions?: string[];
+  notes?: string;
+
+  created_at: string;
+  updated_at: string;
+
+  user: IUser;
+  status: string;
+  nextAppointment: string;       
+  registrationDate: string;     
+}
+
 
 export interface IHealthRecord {
   id: number;
@@ -318,20 +341,28 @@ export interface INewMedicalNote {
 
 
 export interface INewAppointment {
-  pet_id: number;
-  veterinarian_id: number;
+  veterinarianId?: number | null;
+
+  petName: string;
+  species: string;
+  breed?: string | null;
+
   type: string;
   clinic: string;
   date: string;
   time: string;
 
   notes?: string | null;
-  priority?: "high" | "medium" | "low" | null;
+  priority?: "high" | "medium" | "low";
   duration?: number | null;
   condition?: string | null;
   symptoms?: string[] | null;
-  time_waiting?: string | null;
+  timeWaiting?: string | null;
+
+  ownerPhone?: string;
+  ownerAddress?: string;
 }
+
 
 
 export interface IAppointment {
@@ -437,3 +468,127 @@ export interface IRecentUser {
   email: string;
   role: string;
 }
+
+
+// patient
+export interface INewPatient {
+  owner_id?: number | null;
+  vetId?: number | null;
+
+  name: string;
+  species: string;
+  breed?: string | null;
+  gender?: "male" | "female" | "unknown";
+  date_of_birth?: Date;
+  status: string;
+  age?: number;
+  weight?: number;
+  color?: string;
+  microchip_id?: string;
+
+  ownerName?: string;
+  owner_phone: string;
+  ownerEmail?: string | null;
+  owner_address: string;
+
+  emergency_contact?: {
+    name: string;
+    phone: string;
+    relationship: string;
+  } | null;
+
+  allergies?: string[] | null;
+  conditions?: string[] | null;
+  notes?: string | null;
+  image: File | null;
+  nextAppointment?: Date | string | null
+}
+
+export interface IEmergencyContact {
+  name: string;
+  phone: string;
+  relationship: string;
+}
+
+export interface IPatient {
+  id: number;
+  ownerId?: number | null;
+  vetId?: number | null;
+
+  name: string;
+  species: string;
+  breed?: string | null;
+  gender: "male" | "female" | "unknown";
+  dateOfBirth?: string | null;
+  age?: number | null;
+  weight?: number | null;
+  color?: string | null;
+  microchipId?: string | null;
+
+  ownerName: string;
+  ownerPhone: string;
+  ownerEmail?: string | null;
+  ownerAddress: string;
+
+  emergencyContact?: IEmergencyContact | null;
+  allergies?: string[] | null;
+  conditions?: string[] | null;
+  notes?: string | null;
+
+  createdAt: string;
+  updatedAt: string;
+
+  owner?: IUser;
+  vet?: IUser;
+}
+
+export interface IOption {
+  id: number | string;
+  name: string;
+}
+
+export interface INewVaccination {
+  patient_id: number | string;
+  patient_species: string;
+
+  vaccine_name: string;
+  vaccine_type: "core" | "non-core" | "rabies";
+
+  manufacturer?: string;
+  batch_number?: string;
+  administered_date: Date;
+  next_due_date?: Date;
+
+  administered_by?: string;
+  site?: string;
+  route?: string;
+  dose?: string;
+  notes?: string;
+  reactions?: string;
+
+  status: "completed" | "due-soon" | "overdue";
+}
+
+export interface IVaccination {
+  id: number;
+  patient_id: number;
+  patient_name: string;
+  patient_species: string;
+  owner_name: string;
+  vaccine_name: string;
+  vaccine_type: 'core' | 'non-core' | 'rabies';
+  manufacturer?: string;
+  batch_number?: string;
+  administered_date: string;
+  next_due_date?: string;
+  administered_by?: string;
+  site?: string;
+  route?: string;
+  dose?: string;
+  notes?: string;
+  reactions?: string;
+  status: 'completed' | 'due-soon' | 'overdue';
+  created_at: string;
+  updated_at: string;
+}
+

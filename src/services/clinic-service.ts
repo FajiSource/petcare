@@ -35,7 +35,7 @@ export const getClinicById = async (id: string) => {
   }
 };
 
-export const updateClinic = async (id: string, data:IClinic) => {
+export const updateClinic = async (id: string, data:IClinic|any) => {
   try {
     const res = await apiService.put(`/admin/clinics/${id}`, data);
     if (res.data.success) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -26,6 +26,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Textarea } from './ui/textarea';
 import { Progress } from './ui/progress';
+import { useGetPetHistory, useGetOwnerPets } from '../lib/react-query/QueriesAndMutations';
 
 interface HistoryEntry {
   id: string;
@@ -71,133 +72,146 @@ export function PetHistory() {
     priority: 'medium' as const
   });
 
-  // Mock data - in real app, this would come from API
-  const pets: Pet[] = [
-    { 
-      id: '1', 
-      name: 'Buddy', 
-      species: 'Dog', 
-      breed: 'Golden Retriever', 
-      age: '3 years',
-      weight: '65 lbs',
-      birthDate: '2021-03-15',
-      microchipId: 'MC123456789',
-      owner: 'John Smith',
-      emergencyContact: '(555) 123-4567'
-    },
-    { 
-      id: '2', 
-      name: 'Whiskers', 
-      species: 'Cat', 
-      breed: 'Persian', 
-      age: '2 years',
-      weight: '8 lbs',
-      birthDate: '2022-08-20',
-      microchipId: 'MC987654321',
-      owner: 'Jane Doe',
-      emergencyContact: '(555) 987-6543'
-    },
-    { 
-      id: '3', 
-      name: 'Max', 
-      species: 'Dog', 
-      breed: 'German Shepherd', 
-      age: '5 years',
-      weight: '80 lbs',
-      birthDate: '2019-11-10',
-      owner: 'Mike Johnson',
-      emergencyContact: '(555) 456-7890'
-    },
-  ];
+  const { data: petsData } = useGetOwnerPets();
 
-  const historyEntries: HistoryEntry[] = [
-    {
-      id: '1',
-      petId: '1',
-      petName: 'Buddy',
-      date: '2024-11-08',
-      type: 'appointment',
-      title: 'Routine Checkup',
-      description: 'Annual wellness examination. All vitals normal. Weight: 65 lbs. Recommended continued exercise routine.',
-      veterinarian: 'Dr. Smith',
-      status: 'completed',
-      category: 'Wellness',
-      cost: 85.00,
-      priority: 'low'
-    },
-    {
-      id: '2',
-      petId: '1',
-      petName: 'Buddy',
-      date: '2024-11-01',
-      type: 'prescription',
-      title: 'Anti-inflammatory Medication',
-      description: 'Rimadyl 75mg prescribed for joint pain. Take twice daily with food for 14 days.',
-      veterinarian: 'Dr. Smith',
-      status: 'active',
-      category: 'Treatment',
-      cost: 45.99,
-      followUpDate: '2024-11-15',
-      priority: 'medium'
-    },
-    {
-      id: '3',
-      petId: '1',
-      petName: 'Buddy',
-      date: '2024-10-15',
-      type: 'vaccination',
-      title: 'Annual DHPP Vaccination',
-      description: 'DHPP booster vaccination administered. No adverse reactions observed. Next due: October 2025.',
-      veterinarian: 'Dr. Smith',
-      status: 'completed',
-      category: 'Prevention',
-      cost: 35.00,
-      priority: 'low'
-    },
-    {
-      id: '4',
-      petId: '1',
-      petName: 'Buddy',
-      date: '2024-09-22',
-      type: 'emergency',
-      title: 'Laceration on Paw',
-      description: 'Minor cut on right front paw from glass. Cleaned, disinfected, and bandaged. Antibiotics prescribed.',
-      veterinarian: 'Dr. Wilson',
-      status: 'completed',
-      category: 'Emergency',
-      cost: 125.00,
-      priority: 'high'
-    },
-    {
-      id: '5',
-      petId: '1',
-      petName: 'Buddy',
-      date: '2024-08-30',
-      type: 'health_record',
-      title: 'Dental Cleaning',
-      description: 'Professional dental cleaning performed under anesthesia. Two minor extractions needed. Recovery excellent.',
-      veterinarian: 'Dr. Johnson',
-      status: 'completed',
-      category: 'Dental',
-      cost: 450.00,
-      priority: 'medium'
-    },
-    {
-      id: '6',
-      petId: '1',
-      petName: 'Buddy',
-      date: '2024-07-18',
-      type: 'note',
-      title: 'Behavior Training Progress',
-      description: 'Completed 6-week basic obedience course. Showing significant improvement in response to commands.',
-      veterinarian: 'Dr. Smith',
-      status: 'completed',
-      category: 'Behavioral',
-      priority: 'low'
+  const { data: historyData, isLoading: isHistoryLoading } = useGetPetHistory(selectedPet ? Number(selectedPet) : undefined as any);
+
+  const transformHistoryToEntries = (history: any): HistoryEntry[] => {
+    if (!history) return [];
+    const entries: HistoryEntry[] = [];
+
+    const petName = history.pet?.name ?? '';
+
+    // appointments
+    (history.appointments ?? []).forEach((a: any) => {
+      entries.push({
+        id: `appointment-${a.id}`,
+        petId: String(a.pet_id || history.pet?.id || ''),
+        petName,
+        date: a.date,
+        type: 'appointment',
+        title: a.type || 'Appointment',
+        description: a.notes || '',
+        veterinarian: a.veterinarian || '',
+        status: a.status || 'completed',
+        category: a.condition || '',
+        attachments: [],
+        cost: a.cost ?? undefined,
+        followUpDate: a.follow_up_date ?? undefined,
+        priority: a.priority ?? 'medium'
+      });
+    });
+
+    // vaccinations
+    (history.vaccinations ?? []).forEach((v: any) => {
+      entries.push({
+        id: `vaccination-${v.id}`,
+        petId: String(v.patient_id || history.pet?.id || ''),
+        petName,
+        date: v.administered_date ? v.administered_date.split('T')[0] : v.administered_date,
+        type: 'vaccination',
+        title: v.vaccine_name || 'Vaccination',
+        description: v.notes || '',
+        veterinarian: v.administered_by || '',
+        status: v.status || 'completed',
+        category: v.vaccine_type || '',
+        attachments: [],
+        priority: 'low'
+      });
+    });
+
+    // prescriptions
+    (history.prescriptions ?? []).forEach((p: any) => {
+      entries.push({
+        id: `prescription-${p.id}`,
+        petId: String(p.pet_id || history.pet?.id || ''),
+        petName,
+        date: p.prescribed_date || p.start_date || '',
+        type: 'prescription',
+        title: p.medication_name || 'Prescription',
+        description: p.instructions || '',
+        veterinarian: p.veterinarian || '',
+        status: p.status || 'active',
+        category: p.category || '',
+        attachments: [],
+        cost: p.cost ? Number(p.cost) : undefined,
+        priority: 'medium'
+      });
+    });
+
+    // records (medical records)
+    (history.records ?? []).forEach((r: any) => {
+      entries.push({
+        id: `record-${r.id}`,
+        petId: String(r.pet_id || history.pet?.id || ''),
+        petName,
+        date: r.date || '',
+        type: 'health_record',
+        title: r.title || r.type || 'Medical Record',
+        description: r.notes || r.treatment || '',
+        veterinarian: r.veterinarian || '',
+        status: 'completed',
+        category: r.type || '',
+        attachments: [],
+        priority: r.priority ?? 'medium'
+      });
+    });
+
+    // medical_notes (string)
+    if (history.medical_notes) {
+      entries.push({
+        id: `medical-notes-1`,
+        petId: String(history.pet?.id || ''),
+        petName,
+        date: history.pet?.updated_at?.split('T')[0] || '',
+        type: 'note',
+        title: 'Medical Notes',
+        description: String(history.medical_notes),
+        veterinarian: '',
+        status: 'completed',
+        category: 'Notes',
+        attachments: [],
+        priority: 'low'
+      });
     }
-  ];
 
-  const selectedPetData = pets.find(pet => pet.id === selectedPet);
+    return entries;
+  };
+
+  const pets = (petsData ?? []).map((p: any) => ({
+    id: String(p.id),
+    name: p.name,
+    species: p.species,
+    breed: p.breed,
+    age: p.age !== undefined ? String(p.age) : '',
+    weight: p.weight ?? '',
+    birthDate: p.date_of_birth ?? '',
+    microchipId: p.microchip_id ?? '',
+    owner: p.owner_name ?? '',
+    emergencyContact: p.emergency_contact?.phone ?? ''
+  } as Pet));
+
+  // derive entries from API response
+  const historyEntries: HistoryEntry[] = transformHistoryToEntries(historyData);
+
+  const selectedPetData = pets.find((pet: Pet) => pet.id === selectedPet) || (historyData?.pet ? {
+    id: String(historyData.pet.id),
+    name: historyData.pet.name,
+    species: historyData.pet.species,
+    breed: historyData.pet.breed,
+    age: String(historyData.pet.age ?? ''),
+    weight: historyData.pet.weight ?? '',
+    birthDate: historyData.pet.date_of_birth ?? '',
+    microchipId: historyData.pet.microchip_id ?? '',
+    owner: historyData.pet.owner_name ?? '',
+    emergencyContact: historyData.pet.emergency_contact?.phone ?? ''
+  } as Pet : undefined);
+
+  useEffect(() => {
+    if ((!selectedPet || selectedPet === '') && pets.length > 0) {
+      setSelectedPet(pets[0].id);
+    }
+  }, [pets]);
   const filteredEntries = historyEntries
     .filter(entry => entry.petId === selectedPet)
     .filter(entry => {
@@ -394,7 +408,7 @@ export function PetHistory() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {pets.map(pet => (
+                  {pets.map((pet: Pet) => (
                     <SelectItem key={pet.id} value={pet.id}>
                       {pet.name} - {pet.species} ({pet.breed})
                     </SelectItem>

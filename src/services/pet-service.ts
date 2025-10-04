@@ -24,6 +24,26 @@ export const getPatients = async () => {
         throw error;
     }
 };
+export const getOwnerPets = async () => {
+    try {
+        const res = await apiService.get('/pets/owner');
+        return res.data;
+    } catch (error) {
+        console.error('Error fetching pets:', error);
+        throw error;
+    }
+};
+
+export const getHistory = async (id:string | number) => {
+    try {
+        const res = await apiService.get(`/pets/${id}/history`);
+        console.log(res)
+        return res.data.history;
+    } catch (error) {
+        console.error('Error fetching history:', error);
+        throw error;
+    }
+};
 
 export const addNewPet = async (data: INewPatient) => {
   try {

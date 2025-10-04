@@ -4,7 +4,7 @@ import { addUser, addVetUser, deleteUser, getAllAdmins, getAllVets, getOwners, g
 import { QUERY_KEYS } from "./queryKeys"
 import { getAdminTotals, getMonthlyAppoinments, getRecentUserRegistration, getTopVets, getUserTrends, getVetTotals } from "../../services/analytics-service"
 import { addRecord, getAllVetRecords } from "../../services/veterinarian-services"
-import { addNewPet, getPets, getPatients, updatePet } from "../../services/pet-service"
+import { addNewPet, getPets, getPatients, updatePet, getOwnerPets } from "../../services/pet-service"
 import { addNewPrescription, getOwnerPrescriptionRecords, getVetPrescriptionRecords } from "../../services/prescription-service"
 import { addNewNote, getVetNoteRecords } from "../../services/note-service"
 import { updateAppointmentStatus, createNewAppointment, getOwnerAppointments, getVetAAppointments, getAllAppointments, updateAppointment, rescheduleAppointment, cancelAppointment, getVetTodaySchedules, getVetUrgents, getVetRecents } from "../../services/appointment-service"
@@ -14,6 +14,7 @@ import { createNewClinic, deleteClinic, getClinicById, getClinics, updateClinic 
 import { createNewPatient, deletePatient, getVetPatients, updatePatient } from "../../services/patient-service"
 import { addNewVaccination, deleteVaccination, getOwnerVaccinations, getVaccinations, updateVaccination } from "../../services/vaccination-service"
 import { getOwnerLatestPets, getOwnerTotals, getOwnerUpcomingAppointments } from "../../services/owner-db-service"
+import { getHistory } from "../../services/pet-service"
 
 
 export const useAddNewUser = () => {
@@ -140,6 +141,12 @@ export const useGetVetPatients = () => {
     return useQuery({
         queryKey: [QUERY_KEYS.GET_VET_PATIENTS],
         queryFn: getPatients
+    });
+};
+export const useGetOwnerPets = () => {
+    return useQuery({
+        queryKey: ['owner-pets'],
+        queryFn: getOwnerPets
     });
 };
 export const useAddNewPet = () => {
@@ -538,3 +545,13 @@ export const useGetOwnerUpcomingAppointments = () => {
         initialData: [],
     });
 };
+
+export const useGetPetHistory = (id?: string | number) => {
+    return useQuery({
+        queryKey: ['pet-history', id],
+        queryFn: () => (id ? getHistory(id) : Promise.resolve([])),
+        enabled: !!id,
+        select: (data) => data ?? [],
+        initialData: [],
+    })
+}

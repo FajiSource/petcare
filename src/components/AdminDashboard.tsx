@@ -19,62 +19,63 @@ import {
   Plus,
   Eye,
 } from 'lucide-react';
-import { useAdminDashboardTotals, useGetRecentUserRegistrations } from '../lib/react-query/QueriesAndMutations';
-import { IRecentUser } from '../lib/types';
+import { useAdminDashboardTotals, useGetRecentUserRegistrations, useGetTopVets } from '../lib/react-query/QueriesAndMutations';
+import { IRecentUser, ITopVet } from '../lib/types';
 
 export function AdminDashboard() {
   const { user, pets, veterinarians, clinics, setCurrentView } = useApp();
   const { data: totals, isPending: isGettingTotals } = useAdminDashboardTotals()
   const { data: recentUsers } = useGetRecentUserRegistrations()
+  const { data: topVeterinarians } = useGetTopVets()
 
-  const recentActivities = [
-    {
-      id: '1',
-      type: 'user_registration',
-      description: 'New user registered: Sarah Chen',
-      timestamp: '2 minutes ago',
-      severity: 'info'
-    },
-    {
-      id: '2',
-      type: 'appointment_scheduled',
-      description: 'Appointment scheduled by John Smith for Buddy',
-      timestamp: '15 minutes ago',
-      severity: 'success'
-    },
-    {
-      id: '3',
-      type: 'system_alert',
-      description: 'Server response time increased to 245ms',
-      timestamp: '1 hour ago',
-      severity: 'warning'
-    },
-    {
-      id: '4',
-      type: 'vet_registered',
-      description: 'New veterinarian registered: Dr. Michael Torres',
-      timestamp: '2 hours ago',
-      severity: 'info'
-    }
-  ];
+  // const recentActivities = [
+  //   {
+  //     id: '1',
+  //     type: 'user_registration',
+  //     description: 'New user registered: Sarah Chen',
+  //     timestamp: '2 minutes ago',
+  //     severity: 'info'
+  //   },
+  //   {
+  //     id: '2',
+  //     type: 'appointment_scheduled',
+  //     description: 'Appointment scheduled by John Smith for Buddy',
+  //     timestamp: '15 minutes ago',
+  //     severity: 'success'
+  //   },
+  //   {
+  //     id: '3',
+  //     type: 'system_alert',
+  //     description: 'Server response time increased to 245ms',
+  //     timestamp: '1 hour ago',
+  //     severity: 'warning'
+  //   },
+  //   {
+  //     id: '4',
+  //     type: 'vet_registered',
+  //     description: 'New veterinarian registered: Dr. Michael Torres',
+  //     timestamp: '2 hours ago',
+  //     severity: 'info'
+  //   }
+  // ];
 
   // Mock system alerts
-  const systemAlerts = [
-    {
-      id: '1',
-      title: 'High Server Load',
-      description: 'Server CPU usage is at 85%. Consider scaling resources.',
-      severity: 'warning',
-      timestamp: '30 minutes ago'
-    },
-    {
-      id: '2',
-      title: 'Backup Completed',
-      description: 'Daily database backup completed successfully.',
-      severity: 'success',
-      timestamp: '2 hours ago'
-    }
-  ];
+  // const systemAlerts = [
+  //   {
+  //     id: '1',
+  //     title: 'High Server Load',
+  //     description: 'Server CPU usage is at 85%. Consider scaling resources.',
+  //     severity: 'warning',
+  //     timestamp: '30 minutes ago'
+  //   },
+  //   {
+  //     id: '2',
+  //     title: 'Backup Completed',
+  //     description: 'Daily database backup completed successfully.',
+  //     severity: 'success',
+  //     timestamp: '2 hours ago'
+  //   }
+  // ];
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -197,22 +198,19 @@ export function AdminDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Top Veterinarians</CardTitle>
+                <CardTitle>Top Performing Veterinarians</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {veterinarians.slice(0, 3).map((vet, index) => (
-                    <div key={vet.id} className="flex items-center gap-3">
-                      <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 text-xs font-medium">
-                        #{index + 1}
+                  {topVeterinarians?.map((vet: ITopVet, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div>
+                        <div className="font-medium text-sm">{vet.name}</div>
+                        <div className="text-xs text-gray-500">{vet.specialization}</div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{vet.name}</p>
-                        <p className="text-xs text-gray-500">{vet.specialization}</p>
+                      <div className="text-right">
+                        <div className="text-sm font-medium">{vet.total_appointments} appointments</div>
                       </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {Math.floor(Math.random() * 50) + 20} patients
-                      </Badge>
                     </div>
                   ))}
                 </div>

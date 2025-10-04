@@ -65,7 +65,6 @@ export function Vaccinations() {
     const matchesSearch = (vaccination.patient_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (vaccination.vaccine_name || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesPet = selectedPet === 'all' || String(vaccination.patient_id) === selectedPet;
-    // Map UI status filter (current/upcoming/overdue) to API status values
     const matchesStatus = statusFilter === 'all'
       || (statusFilter === 'current' && vaccination.status === 'completed')
       || (statusFilter === 'upcoming' && vaccination.status === 'due-soon')
@@ -74,7 +73,6 @@ export function Vaccinations() {
     return matchesSearch && matchesPet && matchesStatus;
   }) ?? [];
 
-  // Map backend status values to UI colors
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800 border-green-200';

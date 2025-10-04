@@ -23,8 +23,6 @@ import { PetOwnerReports } from './PetOwnerReports';
 import { ClinicManagement } from './admin/ClinicManagement';
 import { VaccinationManagement } from './vet/VaccinationManagement';
 
-
-
 export function DashboardLayout() {
   const { currentView, user } = useApp();
 
@@ -54,8 +52,8 @@ export function DashboardLayout() {
         return <VeterinarianManagement />;
       case 'manage-clinics':
         return <ClinicManagement />;
-      case 'all-pets':
-        return <AllPets />;
+      // case 'all-pets':
+      //   return <AllPets />;
       case 'all-appointments':
         return <AllAppointments />;
       case 'system-reports':
@@ -83,8 +81,10 @@ export function DashboardLayout() {
           return <AdminDashboard />;
         } else if (user?.role === 'veterinarian') {
           return <VeterinarianDashboard />;
-        } else {
+        } else if (user?.role === 'pet_owner')  {
           return <Dashboard />;
+        }else{
+          return 
         }
     }
   };

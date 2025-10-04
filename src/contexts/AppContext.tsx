@@ -10,15 +10,7 @@ const INITIAL_CURRENT_ROLE: ICurrentRole = {
   veterinarian: false,
   pet_owner: false,
 }
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  clinicId?: string; // For veterinarians
-  licenseNumber?: string; // For veterinarians
-  specialization?: string; // For veterinarians
-}
+// Use the shared IUser type from ../lib/types for user shape
 
 interface Pet {
   id: string;
@@ -52,13 +44,13 @@ interface Clinic {
 }
 
 interface AppContextType {
-  user: User | null;
+  user: IUser | null;
   pets: Pet[];
   veterinarians: Veterinarian[];
   clinics: Clinic[];
   currentView: string;
   isAuthenticated: boolean;
-  login: (userData: User) => void;
+  login: (userData: IUser) => void;
   logout: () => void;
   setCurrentView: (view: string) => void;
   addPet: (pet: Pet) => void;
@@ -83,6 +75,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentRole, setCurrentRole] = useState<ICurrentRole>(INITIAL_CURRENT_ROLE)
 
+  // helper placed here so other initialization logic can use it
+  const getDefaultViewForRole = (role: UserRole): string => {
+    switch (role) {
+      case 'admin':
+        return 'admin-dashboard';
+      case 'veterinarian':
+        return 'vet-dashboard';
+      case 'pet_owner':
+        return 'dashboard';
+      default:
+        return 'dashboard';
+    }
+  };
+
   useEffect(() => {
     // Check for saved auth state
     const getCurrentUser = async () => {
@@ -90,7 +96,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const currentUser = await getUser();
         localStorage.setItem('petcare_user', JSON.stringify(currentUser));
         console.log(currentUser)
-        const userData = currentUser;
+        const userData = currentUser as IUser;
         setUser(userData);
         setIsAuthenticated(true);
         loadRoleSpecificData(userData);
@@ -105,8 +111,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (currentUser === null) {
       getCurrentUser();
     } else {
-      setIsAuthenticated(true);
-      setUser(JSON.parse(currentUser));
+      try {
+        const parsed = JSON.parse(currentUser) as IUser;
+        setIsAuthenticated(true);
+        setUser(parsed);
+        // ensure view matches role after reload
+        setCurrentView(getDefaultViewForRole(parsed.role));
+        // load role specific mock data
+        loadRoleSpecificData(parsed);
+      } catch (err) {
+        console.error('Failed to parse stored user:', err);
+        localStorage.removeItem('petcare_user');
+      }
     }
 
   }, []);
@@ -117,7 +133,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setCurrentRole({ ...INITIAL_CURRENT_ROLE });
     }
   }, [user])
-  const loadRoleSpecificData = (userData: User) => {
+  const loadRoleSpecificData = (userData: IUser) => {
     loadMockClinics();
     loadMockVeterinarians();
 
@@ -302,7 +318,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setPets(mockPets);
   };
 
-  const login = (userData: User) => {
+  const login = (userData: IUser) => {
     setUser(userData);
     setIsAuthenticated(true);
     localStorage.setItem('petcare_user', JSON.stringify(userData));
@@ -311,19 +327,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Set default view based on role
     const defaultView = getDefaultViewForRole(userData.role);
     setCurrentView(defaultView);
-  };
-
-  const getDefaultViewForRole = (role: UserRole): string => {
-    switch (role) {
-      case 'admin':
-        return 'admin-dashboard';
-      case 'veterinarian':
-        return 'vet-dashboard';
-      case 'pet_owner':
-        return 'dashboard';
-      default:
-        return 'dashboard';
-    }
   };
 
   const logout = () => {

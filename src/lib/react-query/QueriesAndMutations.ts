@@ -13,6 +13,7 @@ import { getOwnerRecords } from "../../services/owner-service"
 import { createNewClinic, deleteClinic, getClinicById, getClinics, updateClinic } from "../../services/clinic-service"
 import { createNewPatient, deletePatient, getVetPatients, updatePatient } from "../../services/patient-service"
 import { addNewVaccination, deleteVaccination, getOwnerVaccinations, getVaccinations, updateVaccination } from "../../services/vaccination-service"
+import { getOwnerLatestPets, getOwnerTotals, getOwnerUpcomingAppointments } from "../../services/owner-db-service"
 
 
 export const useAddNewUser = () => {
@@ -508,3 +509,32 @@ export function useGetVetTotals() {
         initialData: [],
     });
 }
+
+
+// owner db
+export const useGetOwnerTotals = () => {
+    return useQuery({
+        queryKey: ['owner-totols'],
+        queryFn: getOwnerTotals, 
+        select: (data) => data ?? [],
+        initialData: [],
+    });
+};
+
+export const useGetOwnerLatestPets = () => {
+    return useQuery({
+        queryKey: ['owner-latest-pets'],
+        queryFn: getOwnerLatestPets,
+        select: (data) => data ?? [],
+        initialData: [],
+    });
+};
+
+export const useGetOwnerUpcomingAppointments = () => {
+    return useQuery({
+        queryKey: ['owner-upcoming'],
+        queryFn: getOwnerUpcomingAppointments,
+        select: (data) => data ?? [],
+        initialData: [],
+    });
+};

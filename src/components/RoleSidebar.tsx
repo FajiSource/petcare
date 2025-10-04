@@ -33,7 +33,7 @@ const adminNavigationItems = [
   { id: 'manage-users', icon: Users, label: 'Manage Users' },
   { id: 'manage-vets', icon: UserCheck, label: 'Veterinarians' },
   { id: 'manage-clinics', icon: Building, label: 'Clinics' },
-  { id: 'all-pets', icon: PawPrint, label: 'All Pets' },
+  // { id: 'all-pets', icon: PawPrint, label: 'All Pets' },s
   { id: 'all-appointments', icon: Calendar, label: 'All Appointments' },
   { id: 'system-reports', icon: BarChart3, label: 'System Reports' },
   { id: 'system-settings', icon: Settings, label: 'System Settings' }

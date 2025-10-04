@@ -11,8 +11,9 @@ import {
   Download,
   RefreshCw,
 } from 'lucide-react';
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar } from 'recharts';
 import { useAdminDashboardTotals, useGetMonthlyAppoinments, useGetTopVets, useGetUserTrends } from '../../lib/react-query/QueriesAndMutations';
-import { ITopVet, iUserTrend } from '../../lib/types';
+import { ITopVet, IUserTrend } from '../../lib/types';
 
 interface ReportData {
   label: string;
@@ -106,7 +107,7 @@ export function SystemReports() {
         <TabsContent value="overview" className="space-y-6">
           {/* Key Metrics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {totals?.list?.map((metric, index) => (
+            {(totals?.list ?? totals?.metrics ?? []).map((metric: any, index: number) => (
               <Card key={index}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">{metric.label}</CardTitle>
@@ -120,34 +121,30 @@ export function SystemReports() {
 
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Monthly Appointments</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {monthlyAppointments?.slice(-6).map((month, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{month.month_name}</span>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="text-sm font-medium">{month.total}</div>
-                          <div className="text-xs text-gray-500">Total</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-medium text-green-600">{month.completed}</div>
-                          <div className="text-xs text-gray-500">Completed</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-medium text-red-600">{month.cancelled}</div>
-                          <div className="text-xs text-gray-500">Cancelled</div>
-                        </div>
-                      </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Monthly Appointments</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {Array.isArray(monthlyAppointments) && monthlyAppointments.length > 0 ? (
+                    <div style={{ width: '100%', height: 300 }}>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={monthlyAppointments.slice(-12)}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month_name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="total" stroke="#3B82F6" name="Total" strokeWidth={2} />
+                          <Line type="monotone" dataKey="completed" stroke="#10B981" name="Completed" strokeWidth={2} />
+                          <Line type="monotone" dataKey="cancelled" stroke="#EF4444" name="Cancelled" strokeWidth={2} />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  ) : (
+                    <div className="text-sm text-gray-500">No appointment data available.</div>
+                  )}
+                </CardContent>
+              </Card>
 
             <Card>
               <CardHeader>
@@ -179,27 +176,23 @@ export function SystemReports() {
                 <CardTitle>User Growth Trends</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {userGrowthData?.map((month: iUserTrend, index: number) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{month.month}</span>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="text-sm font-medium text-blue-600">{month.petOwners}</div>
-                          <div className="text-xs text-gray-500">Pet Owners</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-medium text-green-600">{month.veterinarians}</div>
-                          <div className="text-xs text-gray-500">Vets</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-medium text-red-600">{month.admins}</div>
-                          <div className="text-xs text-gray-500">Admins</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {Array.isArray(userGrowthData) && userGrowthData.length > 0 ? (
+                  <div style={{ width: '100%', height: 300 }}>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={userGrowthData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="petOwners" stroke="#3B82F6" name="Pet Owners" strokeWidth={2} />
+                        <Line type="monotone" dataKey="veterinarians" stroke="#10B981" name="Veterinarians" strokeWidth={2} />
+                        <Line type="monotone" dataKey="admins" stroke="#EF4444" name="Admins" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">No user growth data available.</div>
+                )}
               </CardContent>
             </Card>
 

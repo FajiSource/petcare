@@ -12,7 +12,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar, Cell } from 'recharts';
-import { useAdminDashboardTotals, useGetMonthlyAppoinments, useGetTopPerformingClinics, useGetTopVets, useGetUserActivitySummary, useGetUserTrends } from '../../lib/react-query/QueriesAndMutations';
+import { useAdminDashboardTotals, useGetAppointmentAnalytics, useGetMonthlyAppoinments, useGetTopPerformingClinics, useGetTopVets, useGetUserActivitySummary, useGetUserTrends } from '../../lib/react-query/QueriesAndMutations';
 import { ITopVet, IUserTrend } from '../../lib/types';
 
 interface ReportData {
@@ -28,6 +28,7 @@ export function SystemReports() {
   const { data: userGrowthData } = useGetUserTrends()
   const { data: userActivitySummary } = useGetUserActivitySummary()
   const { data: topClinics } = useGetTopPerformingClinics()
+  const { data: appointmentAnalytics } = useGetAppointmentAnalytics()
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -58,17 +59,6 @@ export function SystemReports() {
         </div>
 
         <div className="flex gap-2">
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Last 7 days</SelectItem>
-              <SelectItem value="30">Last 30 days</SelectItem>
-              <SelectItem value="90">Last 3 months</SelectItem>
-              <SelectItem value="365">Last year</SelectItem>
-            </SelectContent>
-          </Select>
 
           <Button variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -233,28 +223,38 @@ export function SystemReports() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Appointment Analytics</CardTitle>
+                <CardTitle>Appointment Overview</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-3 bg-green-50 rounded">
-                      <div className="text-2xl font-bold text-green-600">82.3%</div>
-                      <div className="text-sm text-gray-600">Completion Rate</div>
+                      <div className="text-2xl font-bold text-green-700">{appointmentAnalytics?.completed ?? 0}%</div>
+                      <div className="text-sm text-gray-600">Completed</div>
                     </div>
-                    <div className="text-center p-3 bg-blue-50 rounded">
-                      <div className="text-2xl font-bold text-blue-600">45min</div>
-                      <div className="text-sm text-gray-600">Avg Duration</div>
+                    <div className="text-center p-3 bg-sky-50 rounded">
+                      <div className="text-2xl font-bold text-sky-700">{appointmentAnalytics?.confirmed ?? 0}%</div>
+                      <div className="text-sm text-gray-600">Confirmed</div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-yellow-50 rounded">
-                      <div className="text-2xl font-bold text-yellow-600">7.8%</div>
-                      <div className="text-sm text-gray-600">Cancellation Rate</div>
+                  <div className="grid grid-cols-2 gap-4">  
+                    <div className="text-center p-3 bg-rose-50 rounded">
+                      <div className="text-2xl font-bold text-rose-700">{appointmentAnalytics?.cancelled ?? 0}%</div>
+                      <div className="text-sm text-gray-600">Cancelled</div>
                     </div>
-                    <div className="text-center p-3 bg-purple-50 rounded">
-                      <div className="text-2xl font-bold text-purple-600">4.7★</div>
-                      <div className="text-sm text-gray-600">Avg Rating</div>
+                    <div className="text-center p-3 bg-amber-50 rounded">
+                      <div className="text-2xl font-bold text-amber-700">{appointmentAnalytics?.urgent ?? 0}%</div>
+                      <div className="text-sm text-gray-600">Urgent</div>
+                    </div>
+                  </div>
+                   <div className="grid grid-cols-2 gap-4">  
+                    <div className="text-center p-3 bg-indigo-50 rounded">
+                      <div className="text-2xl font-bold text-indigo-700">{appointmentAnalytics?.scheduled ?? 0}%</div>
+                      <div className="text-sm text-gray-600">Scheduled</div>
+                    </div>
+                    <div className="text-center p-3 bg-violet-50 rounded">
+                      <div className="text-2xl font-bold text-violet-700">{appointmentAnalytics?.inProgress ?? 0}%</div>
+                      <div className="text-sm text-gray-600">In Progress</div>
                     </div>
                   </div>
                 </div>
@@ -267,7 +267,7 @@ export function SystemReports() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {topClinics.map((clinic, index) => (
+                  {topClinics?.map((clinic: any, index: number) => (
                     <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <div>
                         <div className="font-medium text-sm">{clinic.name}</div>

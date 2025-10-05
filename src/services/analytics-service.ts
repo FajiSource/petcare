@@ -28,6 +28,14 @@ export const getTopPerformingClinics = async () => {
     }
 }
 
+export const getAppointmentAnalytics = async () => {
+    try {
+        const res = await apiService.get('/admin/analytics/appointment-analytics');
+        return res?.data;
+    } catch (error) {
+        throw error;
+    }
+}
 
 export const getMonthlyAppoinments = async () => {
     try {

@@ -326,75 +326,7 @@ export function PetHistory() {
           <h1 className="text-2xl font-bold text-gray-900">Pet History</h1>
           <p className="text-gray-600 mt-1">Comprehensive medical and care history</p>
         </div>
-        <Dialog open={isAddNoteOpen} onOpenChange={setIsAddNoteOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Note
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Note to History</DialogTitle>
-              <DialogDescription>
-                Add a note or observation to {selectedPetData?.name}'s history.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="noteTitle">Title</Label>
-                <Input
-                  id="noteTitle"
-                  value={newNote.title}
-                  onChange={(e) => setNewNote(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Brief title for the note"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="noteCategory">Category</Label>
-                  <Input
-                    id="noteCategory"
-                    value={newNote.category}
-                    onChange={(e) => setNewNote(prev => ({ ...prev, category: e.target.value }))}
-                    placeholder="e.g., Behavioral, Training"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="notePriority">Priority</Label>
-                  <Select value={newNote.priority} onValueChange={(value: any) => setNewNote(prev => ({ ...prev, priority: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="noteDescription">Description</Label>
-                <Textarea
-                  id="noteDescription"
-                  value={newNote.description}
-                  onChange={(e) => setNewNote(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Detailed description of the note"
-                  rows={4}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" onClick={() => setIsAddNoteOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleAddNote} className="bg-blue-600 hover:bg-blue-700">
-                Add Note
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+       
       </div>
 
       {/* Pet Selection */}
@@ -614,10 +546,6 @@ export function PetHistory() {
                   ? 'Try adjusting your search criteria'
                   : `No history entries found for ${selectedPetData?.name}`}
               </p>
-              <Button onClick={() => setIsAddNoteOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Add First Note
-              </Button>
             </CardContent>
           </Card>
         )}

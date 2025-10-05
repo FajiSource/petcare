@@ -2,7 +2,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
 import { IAdminTotals, INewAppointment, INewClinic, INewHealthRecord, INewMedicalNote, INewPatient, INewPet, INewPrescription, INewUser, INewVaccination, INewVetUser, IPet, IRecentUser, ITopVet, IUserTrend, IVaccination } from "../types"
 import { addUser, addVetUser, deleteUser, getAllAdmins, getAllVets, getOwners, getUsers, updateStatus } from "../../services/user-service"
 import { QUERY_KEYS } from "./queryKeys"
-import { getAdminTotals, getMonthlyAppoinments, getRecentUserRegistration, getTopVets, getUserTrends, getVetTotals } from "../../services/analytics-service"
+import { getAdminTotals, getMonthlyAppoinments, getRecentUserRegistration, getTopPerformingClinics, getTopVets, getUserActivitySummary, getUserTrends, getVetTotals } from "../../services/analytics-service"
 import { addRecord, getAllVetRecords } from "../../services/veterinarian-services"
 import { addNewPet, getPets, getPatients, updatePet, getOwnerPets } from "../../services/pet-service"
 import { addNewPrescription, getOwnerPrescriptionRecords, getVetPrescriptionRecords } from "../../services/prescription-service"
@@ -45,6 +45,21 @@ export const useGetMonthlyAppoinments = () => {
         queryFn: getMonthlyAppoinments
     });
 }
+export const useGetTopPerformingClinics = () => {
+    return useQuery({
+        queryKey: ['top-clinics'],
+        queryFn: getTopPerformingClinics,
+        select: (data) => data ?? [],
+        initialData: []
+    });
+}
+export const useGetUserActivitySummary = () => {
+    return useQuery({
+        queryKey: ['user-activity-summary'],
+        queryFn: getUserActivitySummary
+    });
+}
+
 export const useGetTopVets = () => {
     return useQuery<ITopVet[]>({
         queryKey: ['top-vets'],

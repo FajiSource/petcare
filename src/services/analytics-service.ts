@@ -10,6 +10,25 @@ export const getAdminTotals = async () => {
     }
 }
 
+export const getUserActivitySummary = async () => {
+    try {
+        const res = await apiService.get('/admin/analytics/user-activities');
+        return res?.data;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export const getTopPerformingClinics = async () => {
+    try {
+        const res = await apiService.get('/admin/analytics/top-clinics');
+        return res?.data;
+    } catch (error) {
+        throw error;
+    }
+}
+
+
 export const getMonthlyAppoinments = async () => {
     try {
         const res = await apiService.get('/admin/analytics/monthly-appointments');

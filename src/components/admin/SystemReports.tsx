@@ -11,8 +11,8 @@ import {
   Download,
   RefreshCw,
 } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar } from 'recharts';
-import { useAdminDashboardTotals, useGetMonthlyAppoinments, useGetTopVets, useGetUserTrends } from '../../lib/react-query/QueriesAndMutations';
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar, Cell } from 'recharts';
+import { useAdminDashboardTotals, useGetMonthlyAppoinments, useGetTopPerformingClinics, useGetTopVets, useGetUserActivitySummary, useGetUserTrends } from '../../lib/react-query/QueriesAndMutations';
 import { ITopVet, IUserTrend } from '../../lib/types';
 
 interface ReportData {
@@ -26,22 +26,9 @@ export function SystemReports() {
   const { data: monthlyAppointments } = useGetMonthlyAppoinments()
   const { data: topVeterinarians } = useGetTopVets()
   const { data: userGrowthData } = useGetUserTrends()
+  const { data: userActivitySummary } = useGetUserActivitySummary()
+  const { data: topClinics } = useGetTopPerformingClinics()
 
-  const topClinics = [
-    { name: 'PetCare Veterinary Clinic', appointments: 345, pets: 567, rating: 4.8 },
-    { name: 'Animal Health Center', appointments: 298, pets: 445, rating: 4.7 },
-    { name: 'City Pet Hospital', appointments: 267, pets: 389, rating: 4.6 },
-    { name: 'Emergency Animal Care', appointments: 234, pets: 298, rating: 4.9 }
-  ];
-
-  const systemHealthData = [
-    { metric: 'Server Uptime', value: '99.8%', status: 'excellent' },
-    { metric: 'Average Response Time', value: '245ms', status: 'good' },
-    { metric: 'Database Performance', value: '98.2%', status: 'excellent' },
-    { metric: 'Error Rate', value: '0.12%', status: 'excellent' },
-    { metric: 'Storage Usage', value: '68%', status: 'good' },
-    { metric: 'Backup Status', value: 'Current', status: 'excellent' }
-  ];
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'excellent':
@@ -96,27 +83,33 @@ export function SystemReports() {
       </div>
 
       <Tabs value={reportType} onValueChange={setReportType} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="appointments">Appointments</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="system">System Health</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
           {/* Key Metrics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(totals?.list ?? totals?.metrics ?? []).map((metric: any, index: number) => (
-              <Card key={index}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{metric.label}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{metric.value.toLocaleString()}</div>
-                </CardContent>
-              </Card>
-            ))}
+            {(() => {
+              const metricsList: { label: string; value: number }[] = [];
+              if (totals) {
+                metricsList.push({ label: 'Users', value: totals.users ?? 0 });
+                metricsList.push({ label: 'Pets', value: totals.pets ?? 0 });
+                metricsList.push({ label: 'Veterinarians', value: totals.vets ?? 0 });
+              }
+              return metricsList.map((metric, index) => (
+                <Card key={index}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{metric.label}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{metric.value.toLocaleString()}</div>
+                  </CardContent>
+                </Card>
+              ));
+            })()}
           </div>
 
           {/* Charts Section */}
@@ -200,31 +193,38 @@ export function SystemReports() {
               <CardHeader>
                 <CardTitle>User Activity Summary</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium">Daily Active Users</span>
-                    </div>
-                    <span className="text-xl font-bold text-blue-600">847</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-green-50 rounded">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-green-600" />
-                      <span className="font-medium">Weekly Active Users</span>
-                    </div>
-                    <span className="text-xl font-bold text-green-600">1,156</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-purple-50 rounded">
-                    <div className="flex items-center gap-2">
-                      <PawPrint className="h-4 w-4 text-purple-600" />
-                      <span className="font-medium">Monthly Active Users</span>
-                    </div>
-                    <span className="text-xl font-bold text-purple-600">1,247</span>
-                  </div>
-                </div>
-              </CardContent>
+                <CardContent>
+                  {userActivitySummary ? (
+                    (() => {
+                      const activityData: ReportData[] = [
+                        { label: 'Daily', value: Number(userActivitySummary.daily_active_users ?? 0) },
+                        { label: 'Weekly', value: Number(userActivitySummary.weekly_active_users ?? 0) },
+                        { label: 'Monthly', value: Number(userActivitySummary.monthly_active_users ?? 0) },
+                      ];
+                      const colors = ['#3B82F6', '#10B981', '#8B5CF6'];
+
+                      return (
+                        <div style={{ width: '100%', height: 300 }}>
+                          <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={activityData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="label" />
+                              <YAxis />
+                              <Tooltip formatter={(value: any) => value} />
+                              <Bar dataKey="value">
+                                {activityData.map((entry, idx) => (
+                                  <Cell key={`cell-${idx}`} fill={colors[idx % colors.length]} />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="text-sm text-gray-500">No activity data available.</div>
+                  )}
+                </CardContent>
             </Card>
           </div>
         </TabsContent>
@@ -271,11 +271,9 @@ export function SystemReports() {
                     <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <div>
                         <div className="font-medium text-sm">{clinic.name}</div>
-                        <div className="text-xs text-gray-500">{clinic.pets} pets registered</div>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-medium">{clinic.appointments} appointments</div>
-                        <div className="text-xs text-yellow-600">★ {clinic.rating}</div>
                       </div>
                     </div>
                   ))}
@@ -283,56 +281,6 @@ export function SystemReports() {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-
-        <TabsContent value="performance" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance Metrics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">99.8%</div>
-                  <div className="text-sm text-gray-600">System Uptime</div>
-                  <div className="text-xs text-gray-500 mt-1">Last 30 days</div>
-                </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">1.2s</div>
-                  <div className="text-sm text-gray-600">Avg Page Load</div>
-                  <div className="text-xs text-gray-500 mt-1">Global average</div>
-                </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">245ms</div>
-                  <div className="text-sm text-gray-600">API Response Time</div>
-                  <div className="text-xs text-gray-500 mt-1">Average</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="system" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Health Monitor</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {systemHealthData.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">{item.metric}</div>
-                      <div className="text-sm text-gray-600">{item.value}</div>
-                    </div>
-                    <div className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(item.status)}`}>
-                      {item.status}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>

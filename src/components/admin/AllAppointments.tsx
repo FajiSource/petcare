@@ -659,15 +659,15 @@ export function AllAppointments() {
                       <Eye className="w-4 h-4 mr-1" />
                       View Details
                     </Button>
-                    <Button
+                    {/* <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditAppointment(appointment)}
                     >
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
-                    </Button>
-                    {appointment.status === "scheduled" && (
+                    </Button> */}
+                    {/* {appointment.status === "scheduled" && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -678,8 +678,8 @@ export function AllAppointments() {
                         <CheckCircle className="w-4 h-4 mr-1" />
                         Confirm
                       </Button>
-                    )}
-                    {appointment.status === "confirmed" && (
+                    )} */}
+                    {/* {appointment.status === "confirmed" && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -690,8 +690,8 @@ export function AllAppointments() {
                         <Clock className="w-4 h-4 mr-1" />
                         Start
                       </Button>
-                    )}
-                    {appointment.status === "in_progress" && (
+                    )} */}
+                    {/* {appointment.status === "in_progress" && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -702,8 +702,8 @@ export function AllAppointments() {
                         <CheckCircle className="w-4 h-4 mr-1" />
                         Complete
                       </Button>
-                    )}
-                    {
+                    )} */}
+                    {/* {
                       appointment.status !== 'cancelled' && (
                         <Button
                           variant="outline"
@@ -717,7 +717,7 @@ export function AllAppointments() {
                           Cancel
                         </Button>
                       )
-                    }
+                    } */}
                   </div>
                 </div>
               </div>
@@ -945,11 +945,11 @@ export function AllAppointments() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Calendar className="w-5 h-5" />
-                  Appointment Details - {selectedAppointment.type}
+                  Appointment Details - {selectedAppointment?.type}
                 </DialogTitle>
                 <DialogDescription>
                   Complete information for appointment on{" "}
-                  {new Date(selectedAppointment.date).toLocaleDateString()}
+                  {new Date(selectedAppointment?.date).toLocaleDateString()}
                 </DialogDescription>
               </DialogHeader>
 
@@ -967,48 +967,48 @@ export function AllAppointments() {
                     <div>
                       <Label>Date & Time</Label>
                       <p className="text-sm text-gray-600">
-                        {new Date(selectedAppointment.date).toLocaleDateString()} at{" "}
-                        {selectedAppointment.time}
+                        {new Date(selectedAppointment?.date).toLocaleDateString()} at{" "}
+                        {selectedAppointment?.time}
                       </p>
                     </div>
                     <div>
                       <Label>Duration</Label>
                       <p className="text-sm text-gray-600">
-                        {selectedAppointment.duration} minutes
+                        {selectedAppointment?.duration} minutes
                       </p>
                     </div>
                     <div>
                       <Label>Type</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.type}</p>
+                      <p className="text-sm text-gray-600">{selectedAppointment?.type}</p>
                     </div>
                     <div>
                       <Label>Priority</Label>
                       <div className="flex items-center gap-2">
                         <div
                           className={`w-3 h-3 rounded-full ${getPriorityColor(
-                            selectedAppointment.priority
+                            selectedAppointment?.priority
                           )}`}
                         ></div>
                         <span className="text-sm text-gray-600 capitalize">
-                          {selectedAppointment.priority}
+                          {selectedAppointment?.priority}
                         </span>
                       </div>
                     </div>
                     <div>
                       <Label>Status</Label>
-                      <Badge className={getStatusColor(selectedAppointment.status)}>
-                        {getStatusIcon(selectedAppointment.status)}
-                        {selectedAppointment.status
+                      <Badge className={getStatusColor(selectedAppointment?.status)}>
+                        {getStatusIcon(selectedAppointment?.status)}
+                        {selectedAppointment?.status
                           .replace("_", " ")
                           .charAt(0)
                           .toUpperCase() +
-                          selectedAppointment.status.replace("_", " ").slice(1)}
+                          selectedAppointment?.status.replace("_", " ").slice(1)}
                       </Badge>
                     </div>
                     <div>
                       <Label>Veterinarian</Label>
                       <p className="text-sm text-gray-600">
-                        {selectedAppointment.veterinarian?.name}
+                        {selectedAppointment?.veterinarian?.name}
                       </p>
                     </div>
                   </div>
@@ -1016,7 +1016,7 @@ export function AllAppointments() {
                   <div>
                     <Label>Reason for Visit</Label>
                     <p className="text-sm text-gray-600 p-2 bg-gray-50 rounded">
-                      {selectedAppointment.condition}
+                      {selectedAppointment?.condition}
                     </p>
                   </div>
                 </TabsContent>
@@ -1026,27 +1026,27 @@ export function AllAppointments() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Pet Name</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.pet?.name}</p>
+                      <p className="text-sm text-gray-600">{selectedAppointment?.pet?.name}</p>
                     </div>
                     <div>
                       <Label>Species</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.pet?.species}</p>
+                      <p className="text-sm text-gray-600">{selectedAppointment?.pet?.species}</p>
                     </div>
                     <div>
                       <Label>Owner Name</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.pet?.user?.name}</p>
+                      <p className="text-sm text-gray-600">{selectedAppointment?.pet?.user?.name}</p>
                     </div>
                     <div>
                       <Label>Email</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.pet?.user?.email}</p>
+                      <p className="text-sm text-gray-600">{selectedAppointment?.pet?.user?.email}</p>
                     </div>
                     <div>
                       <Label>Phone</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.pet?.user?.phone}</p>
+                      <p className="text-sm text-gray-600">{selectedAppointment?.pet?.user?.phone}</p>
                     </div>
                     <div>
                       <Label>Clinic</Label>
-                      <p className="text-sm text-gray-600">{selectedAppointment.clinic || "—"}</p>
+                      <p className="text-sm text-gray-600">{selectedAppointment?.clinic || "—"}</p>
                     </div>
                   </div>
                 </TabsContent>
@@ -1056,7 +1056,7 @@ export function AllAppointments() {
                   <div>
                     <Label>Appointment Notes</Label>
                     <p className="text-sm text-gray-600 p-2 bg-gray-50 rounded">
-                      {selectedAppointment.notes || "No notes available"}
+                      {selectedAppointment?.notes || "No notes available"}
                     </p>
                   </div>
 
@@ -1064,17 +1064,21 @@ export function AllAppointments() {
                     <div>
                       <Label>Condition</Label>
                       <p className="text-sm text-gray-600">
-                        {selectedAppointment.condition || "Not specified"}
+                        {selectedAppointment?.condition || "Not specified"}
                       </p>
                     </div>
-                    <div>
+                    {/* <div>
                       <Label>Symptoms</Label>
                       <p className="text-sm text-gray-600">
-                        {selectedAppointment.symptoms?.length
-                          ? selectedAppointment.symptoms.join(", ")
+                        {selectedAppointment?.symptoms?.length
+                          ? (
+                            selectedAppointment?.map(s => (
+                              <p>{s}</p>
+                            ))
+                          )
                           : "No symptoms provided"}
                       </p>
-                    </div>
+                    </div> */}
                   </div>
                 </TabsContent>
 
@@ -1084,27 +1088,27 @@ export function AllAppointments() {
                     <div>
                       <Label>Appointment Cost</Label>
                       <p className="text-sm text-gray-600">
-                        {selectedAppointment.cost ? `$${selectedAppointment.cost}` : "Not set"}
+                        {selectedAppointment?.cost ? `$${selectedAppointment?.cost}` : "Not set"}
                       </p>
                     </div>
                     <div>
                       <Label>Payment Status</Label>
                       <Badge
-                        variant={selectedAppointment.isPaid ? "default" : "outline"}
+                        variant={selectedAppointment?.isPaid ? "default" : "outline"}
                       >
-                        {selectedAppointment.isPaid ? "Paid" : "Pending"}
+                        {selectedAppointment?.isPaid ? "Paid" : "Pending"}
                       </Badge>
                     </div>
                     <div>
                       <Label>Created Date</Label>
                       <p className="text-sm text-gray-600">
-                        {new Date(selectedAppointment.created_at).toLocaleDateString()}
+                        {new Date(selectedAppointment?.created_at).toLocaleDateString()}
                       </p>
                     </div>
                     <div>
                       <Label>Last Modified</Label>
                       <p className="text-sm text-gray-600">
-                        {new Date(selectedAppointment.updated_at).toLocaleDateString()}
+                        {new Date(selectedAppointment?.updated_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>

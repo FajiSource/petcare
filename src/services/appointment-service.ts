@@ -101,7 +101,18 @@ export const updateAppointment = async (id: number, data: Partial<IAppointment>)
         throw error;
     }
 };
-
+export const updateAppointmentNotes = async (id: number, notes: string) => {
+    try {
+        const res = await apiService.post(`/appointments/update-notes/${id}`, { notes: notes });
+        if (res.data.success) {
+            return res.data.appointment;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error updating appointment notes:', error);
+        throw error;
+    }
+};
 export const rescheduleAppointment = async (id: number, data: { date: string; time: string }) => {
     try {
         const res = await apiService.post(`/appointments/${id}/reschedule`, data);

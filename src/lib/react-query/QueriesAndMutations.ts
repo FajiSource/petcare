@@ -7,7 +7,7 @@ import { addRecord, getAllVetRecords } from "../../services/veterinarian-service
 import { addNewPet, getPets, getPatients, updatePet, getOwnerPets } from "../../services/pet-service"
 import { addNewPrescription, getOwnerPrescriptionRecords, getVetPrescriptionRecords } from "../../services/prescription-service"
 import { addNewNote, getVetNoteRecords } from "../../services/note-service"
-import { updateAppointmentStatus, createNewAppointment, getOwnerAppointments, getVetAAppointments, getAllAppointments, updateAppointment, rescheduleAppointment, cancelAppointment, getVetTodaySchedules, getVetUrgents, getVetRecents } from "../../services/appointment-service"
+import { updateAppointmentStatus, createNewAppointment, getOwnerAppointments, getVetAAppointments, getAllAppointments, updateAppointment, rescheduleAppointment, cancelAppointment, getVetTodaySchedules, getVetUrgents, getVetRecents, updateAppointmentNotes } from "../../services/appointment-service"
 import { getClinicsSelections, getOwnersSelections, getPetSelections, getVetsSelections } from "../../services/selection-service"
 import { getOwnerRecords } from "../../services/owner-service"
 import { createNewClinic, deleteClinic, getClinicById, getClinics, updateClinic } from "../../services/clinic-service"
@@ -274,6 +274,17 @@ export const useUpdateAppointment = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: ({ id, data }: { id: number; data: any }) => updateAppointment(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_APPOINTMENTS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_OWNER_APPOINTMENTS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VET_APPOINTMENTS] });
+        },
+    });
+};
+export const useUpdateAppointmentNotes = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, notes }: { id: number; notes: string }) => updateAppointmentNotes(id, notes),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_APPOINTMENTS] });
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_OWNER_APPOINTMENTS] });

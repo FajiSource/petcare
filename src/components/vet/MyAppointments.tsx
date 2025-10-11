@@ -25,7 +25,7 @@ import {
   Stethoscope,
   Plus
 } from 'lucide-react';
-import { useUpdateAppointmentStatus, useGetVetAppointments } from '../../lib/react-query/QueriesAndMutations';
+import { useUpdateAppointmentStatus, useGetVetAppointments, useUpdateAppointmentNotes } from '../../lib/react-query/QueriesAndMutations';
 import { IAppointment } from '../../lib/types';
 
 interface Appointment {
@@ -55,7 +55,6 @@ export function MyAppointments() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedAppointment, setSelectedAppointment] = useState<IAppointment | null>(null);
-  const [appointmentNotes, setAppointmentNotes] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
 
   const getStatusColor = (status: string) => {
@@ -140,150 +139,167 @@ export function MyAppointments() {
     }
   };
 
-  const AppointmentCard = ({ appointment }: { appointment: IAppointment }) => (
-    <Card className="mb-4 hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4 flex-1">
-            <Avatar className="h-16 w-16">
-              {appointment.pet.image ? (
-                <AvatarImage src={appointment.pet.image} alt={appointment.pet.name} />
-              ) : (
-                <AvatarFallback className="bg-blue-100">
-                  {appointment.pet.name.charAt(0)}
-                </AvatarFallback>
-              )}
-            </Avatar>
+  const AppointmentCard = ({ appointment }: { appointment: IAppointment }) => {
+    const [appointmentNotes, setAppointmentNotes] = useState('');
+    const { mutateAsync: updateNotes, isPending: isUpdatingNotes } = useUpdateAppointmentNotes()
+    const handleSaveNotes = async () => {
+      if (!appointment) return;
+      try {
+        await updateNotes({ id: appointment.id, notes: appointmentNotes });
+        console.log("Notes updated successfully");
+      }
+      catch (error) {
+        console.log(error)
+      }
+    }
+    return (
+      <Card className="mb-4 hover:shadow-md transition-shadow">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-4 flex-1">
+              <Avatar className="h-16 w-16">
+                {appointment.pet.image ? (
+                  <AvatarImage src={appointment.pet.image} alt={appointment.pet.name} />
+                ) : (
+                  <AvatarFallback className="bg-blue-100">
+                    {appointment.pet.name.charAt(0)}
+                  </AvatarFallback>
+                )}
+              </Avatar>
 
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-lg">{appointment.pet.name}</h3>
-                <Badge className={getPriorityColor(appointment.priority)}>
-                  {appointment?.priority?.toUpperCase()}
-                </Badge>
-              </div>
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-lg">{appointment.pet.name}</h3>
+                  <Badge className={getPriorityColor(appointment.priority)}>
+                    {appointment?.priority?.toUpperCase()}
+                  </Badge>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4" />
-                  {formatDate(appointment.date)}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4" />
+                    {formatDate(appointment.date)}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    {formatTime(appointment.time)} ({appointment.duration} min)
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Stethoscope className="h-4 w-4" />
+                    {appointment.type}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    {appointment.pet.user.name}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  {formatTime(appointment.time)} ({appointment.duration} min)
-                </div>
-                <div className="flex items-center gap-2">
-                  <Stethoscope className="h-4 w-4" />
-                  {appointment.type}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  {appointment.pet.user.name}
-                </div>
-              </div>
 
-              {/* <div className="bg-gray-50 p-3 rounded-lg">
+                {/* <div className="bg-gray-50 p-3 rounded-lg">
                 <p className="text-sm font-medium text-gray-900 mb-1">Chief Complaint:</p>
                 <p className="text-sm text-gray-700">{appointment.chiefComplaint}</p>
               </div> */}
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-col items-end gap-3">
-            <Badge className={getStatusColor(appointment.status)}>
-              {appointment.status.replace('-', ' ').toUpperCase()}
-            </Badge>
+            <div className="flex flex-col items-end gap-3">
+              <Badge className={getStatusColor(appointment.status)}>
+                {appointment.status.replace('-', ' ').toUpperCase()}
+              </Badge>
 
-            <div className="flex gap-2">
-              {appointment.status === 'scheduled' && (
-                <>
+              <div className="flex gap-2">
+                {appointment.status === 'scheduled' && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => updateAppointmentStatus(appointment.id, 'in-progress')}
+                    >
+                      Start
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => updateAppointmentStatus(appointment.id, 'cancelled')}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                )}
+
+                {appointment.status === 'in-progress' && (
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={() => updateAppointmentStatus(appointment.id, 'in-progress')}
+                    onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
                   >
-                    Start
+                    Complete
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => updateAppointmentStatus(appointment.id, 'cancelled')}
-                  >
-                    Cancel
-                  </Button>
-                </>
-              )}
+                )}
 
-              {appointment.status === 'in-progress' && (
-                <Button
-                  size="sm"
-                  onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
-                >
-                  Complete
-                </Button>
-              )}
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedAppointment(appointment)}
+                    >
+                      <FileText className="h-4 w-4 mr-1" />
+                      Details
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Appointment Details - {appointment?.pet.name}</DialogTitle>
+                    </DialogHeader>
 
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSelectedAppointment(appointment)}
-                  >
-                    <FileText className="h-4 w-4 mr-1" />
-                    Details
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Appointment Details - {appointment.pet.name}</DialogTitle>
-                  </DialogHeader>
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Pet Information</Label>
+                          <div className="space-y-2 mt-2">
+                            <p className="text-sm"><strong>Name:</strong> {appointment.pet.name}</p>
+                            <p className="text-sm"><strong>Species:</strong> {appointment.pet.species}</p>
+                            <p className="text-sm"><strong>Breed:</strong> {appointment.pet.breed}</p>
+                          </div>
+                        </div>
 
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Pet Information</Label>
-                        <div className="space-y-2 mt-2">
-                          <p className="text-sm"><strong>Name:</strong> {appointment.pet.name}</p>
-                          <p className="text-sm"><strong>Species:</strong> {appointment.pet.species}</p>
-                          <p className="text-sm"><strong>Breed:</strong> {appointment.pet.breed}</p>
+                        <div>
+                          <Label>Owner Information</Label>
+                          <div className="space-y-2 mt-2">
+                            <p className="text-sm"><strong>Name:</strong> {appointment.pet.user.name}</p>
+                            <p className="text-sm"><strong>Phone:</strong> {appointment.pet.phone}</p>
+                            <p className="text-sm"><strong>Email:</strong> {appointment.pet.user.email}</p>
+                          </div>
                         </div>
                       </div>
 
                       <div>
-                        <Label>Owner Information</Label>
-                        <div className="space-y-2 mt-2">
-                          <p className="text-sm"><strong>Name:</strong> {appointment.pet.user.name}</p>
-                          <p className="text-sm"><strong>Phone:</strong> {appointment.pet.phone}</p>
-                          <p className="text-sm"><strong>Email:</strong> {appointment.pet.user.email}</p>
-                        </div>
+                        <Label>Appointment Notes</Label>
+                        <Textarea
+                          className="mt-2"
+                          placeholder="Add your clinical notes here..."
+                          value={appointmentNotes || appointment.notes || ''}
+                          onChange={(e) => {
+                            setAppointmentNotes(e.target.value)
+                          }}
+                          rows={4}
+                        />
+                      </div>
+
+                      <div className="flex gap-2 justify-end">
+                        <Button variant="outline" onClick={handleSaveNotes}>{
+                            isUpdatingNotes ? 'Saving...' : 'Save Notes'
+                          }</Button>
+                        <Button onClick={() => updateAppointmentStatus(appointment?.id, 'completed')}>Complete Appointment</Button>
                       </div>
                     </div>
-
-                    <div>
-                      <Label>Appointment Notes</Label>
-                      <Textarea
-                        className="mt-2"
-                        placeholder="Add your clinical notes here..."
-                        value={appointmentNotes}
-                        onChange={(e) => setAppointmentNotes(e.target.value)}
-                        rows={4}
-                      />
-                    </div>
-
-                    <div className="flex gap-2 justify-end">
-                      <Button variant="outline">Save Notes</Button>
-                      <Button>Complete Appointment</Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>);
+  }
 
   return (
     <div className="space-y-6">

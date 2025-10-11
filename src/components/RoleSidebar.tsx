@@ -199,14 +199,14 @@ export function RoleSidebar() {
         </div>
         
         <div className="space-y-2">
-          <Button
+          {/* <Button
             variant="ghost"
             size="sm"
             className="w-full justify-start gap-2"
           >
             <Settings className="h-4 w-4" />
             Settings
-          </Button>
+          </Button> */}
           <Button
             onClick={logout}
             variant="ghost"

@@ -450,7 +450,7 @@ export function HealthRecords() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    {/* <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -469,7 +469,7 @@ export function HealthRecords() {
                       >
                         <Download className="h-3 w-3" />
                       </Button>
-                    </div>
+                    </div> */}
                   </div>
                 </CardHeader>
 

@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
-import { IAdminTotals, INewAppointment, INewClinic, INewHealthRecord, INewMedicalNote, INewPatient, INewPet, INewPrescription, INewUser, INewVaccination, INewVetUser, IPet, IRecentUser, ITopVet, IUserTrend, IVaccination } from "../types"
+import { IAdminTotals, INewAppointment, INewClinic, INewHealthRecord, INewMedicalNote, INewPatient, INewPet, INewPrescription, INewUser, INewVaccination, INewVetUser, IPet, IPrescription, IRecentUser, ITopVet, IUserTrend, IVaccination } from "../types"
 import { addUser, addVetUser, deleteUser, getAllAdmins, getAllVets, getOwners, getUsers, updateStatus } from "../../services/user-service"
 import { QUERY_KEYS } from "./queryKeys"
 import { getAdminTotals, getAppointmentAnalytics, getMonthlyAppoinments, getRecentUserRegistration, getTopPerformingClinics, getTopVets, getUserActivitySummary, getUserTrends, getVetTotals } from "../../services/analytics-service"
 import { addRecord, getAllVetRecords } from "../../services/veterinarian-services"
 import { addNewPet, getPets, getPatients, updatePet, getOwnerPets } from "../../services/pet-service"
-import { addNewPrescription, getOwnerPrescriptionRecords, getVetPrescriptionRecords } from "../../services/prescription-service"
+import { addNewPrescription, getOwnerPrescriptionRecords, getVetPrescriptionRecords, updatePrescription, updateReFill } from "../../services/prescription-service"
 import { addNewNote, getVetNoteRecords } from "../../services/note-service"
 import { updateAppointmentStatus, createNewAppointment, getOwnerAppointments, getVetAAppointments, getAllAppointments, updateAppointment, rescheduleAppointment, cancelAppointment, getVetTodaySchedules, getVetUrgents, getVetRecents, updateAppointmentNotes } from "../../services/appointment-service"
 import { getClinicsSelections, getOwnersSelections, getPetSelections, getVetsSelections } from "../../services/selection-service"
@@ -196,6 +196,27 @@ export const useGetOwnerPrescriptions = () => {
         queryFn: getOwnerPrescriptionRecords
     });
 };
+
+export const useUpdatePrescriptionReFill = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({ prescriptionId, status }: { prescriptionId: number | string, status: 'refilled' | 'refill_needed' }) => updateReFill({ prescriptionId, status }),
+        onSuccess: () => { 
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VET_PRESCRIPTIONS] });
+            queryClient.invalidateQueries({ queryKey: ['owner-prescriptions'] });
+        }    
+    })
+} 
+export const useUpdatePrescription = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({ prescriptionId, data }: { prescriptionId: number | string, data:IPrescription }) => updatePrescription({ prescriptionId, data }),
+        onSuccess: () => { 
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VET_PRESCRIPTIONS] });
+            queryClient.invalidateQueries({ queryKey: ['owner-prescriptions'] });
+        }    
+    })
+} 
 
 export const useAddNewPrescription = () => {
     const queryClient = useQueryClient()

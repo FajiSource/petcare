@@ -411,7 +411,7 @@ export function MyPatients() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 justify-end pt-4 border-t">
+                {/* <div className="flex gap-2 justify-end pt-4 border-t">
                   <Button variant="outline">
                     <FileText className="h-4 w-4 mr-2" />
                     Medical Records
@@ -428,7 +428,7 @@ export function MyPatients() {
                     <Heart className="h-4 w-4 mr-2" />
                     Update Status
                   </Button>
-                </div>
+                </div> */}
               </DialogContent>
             </Dialog>
 

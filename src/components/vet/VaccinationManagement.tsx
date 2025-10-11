@@ -278,10 +278,10 @@ export function VaccinationManagement() {
             <Trash2 className="h-4 w-4 mr-1" />
             Delete
           </Button>
-          <Button size="sm" variant="outline" className="ml-auto">
+          {/* <Button size="sm" variant="outline" className="ml-auto">
             <FileText className="h-4 w-4 mr-1" />
             Certificate
-          </Button>
+          </Button> */}
         </div>
       </CardContent>
     </Card>

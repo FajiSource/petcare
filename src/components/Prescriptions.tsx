@@ -11,7 +11,7 @@ import { AlertCircle, Calendar, Clock, Pill, Plus, Search, RefreshCw, FileText }
 import { Alert, AlertDescription } from './ui/alert';
 import { Textarea } from './ui/textarea';
 import { Progress } from './ui/progress';
-import { useAddNewPrescription, useGetAllPets, useGetOwnerPrescriptions, useGetVetPrescriptions } from '../lib/react-query/QueriesAndMutations';
+import { useAddNewPrescription, useGetAllPets, useGetOwnerPrescriptions, useGetVetPrescriptions, useUpdatePrescription, useUpdatePrescriptionReFill } from '../lib/react-query/QueriesAndMutations';
 import { INewPrescription, IPrescription } from '../lib/types';
 
 const INITIAL_PRESCRIPTION = {
@@ -36,17 +36,24 @@ export function Prescriptions() {
   const { user, currentRole } = useApp();
   const vetQuery = useGetVetPrescriptions()
   const ownerQuery = useGetOwnerPrescriptions()
+  const { mutateAsync: addNewPrescription } = useAddNewPrescription()
+  const { mutateAsync: updateReFill } = useUpdatePrescriptionReFill()
+  const { mutateAsync: editPrescription } = useUpdatePrescription()
+
 
   const prescriptions = currentRole['veterinarian'] ? vetQuery.data : ownerQuery.data;
   const isGettingPrescriptions = currentRole['veterinarian'] ? vetQuery.isPending : ownerQuery.isPending;
 
-  const { data: pets, isPending: isGettingPets } = useGetAllPets()
-  const { mutateAsync: addNewPrescription, isPending: isAddingNewPrescription } = useAddNewPrescription()
+  const { data: pets } = useGetAllPets()
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPet, setSelectedPet] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [newPrescription, setNewPrescription] = useState<INewPrescription>(INITIAL_PRESCRIPTION);
+  const [selectedPrescription, setSelectedPrescription] = useState<IPrescription | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editPrescriptionData, setEditPrescriptionData] = useState<IPrescription>(null as any);
+
   const medicationCategories = [
     'Antibiotic',
     'Anti-inflammatory',
@@ -71,7 +78,21 @@ export function Prescriptions() {
     'Monthly',
     'As needed'
   ];
+  const handleOpenEdit = (prescription: IPrescription) => {
+    setSelectedPrescription(prescription);
+    setEditPrescriptionData(prescription);
+    setIsEditDialogOpen(true);
+  };
 
+  const handleSaveEdit = async () => {
+    if (!selectedPrescription) return;
+    try {
+      await editPrescription({prescriptionId:editPrescriptionData.id, data: editPrescriptionData}); 
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const filteredPrescriptions = prescriptions?.filter((prescription) => {
     const matchesSearch =
       prescription.pet?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -430,7 +451,7 @@ export function Prescriptions() {
       </div>
 
       {/* Alerts for refills needed */}
-      {refillNeededCount > 0 && (
+      {refillNeededCount > 0 && user?.role === 'veterinarian' && (
         <Alert className="border-yellow-200 bg-yellow-50">
           <AlertCircle className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
@@ -575,30 +596,56 @@ export function Prescriptions() {
                 <div className="flex gap-2 pt-4 border-t">
                   {user?.role === "pet_owner" && (
                     <>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm"
+                        onClick={async () => {
+                          try {
+                            await updateReFill({ prescriptionId: prescription.id, status: 'refill_needed' });
+                          }
+                          catch (error) {
+                            console.log(error);
+                          }
+                        }}
+                      >
                         Request Refill
                       </Button>
-                      <Button variant="outline" size="sm">
+                      {/* <Button variant="outline" size="sm">
                         Set Reminder
-                      </Button>
+                      </Button> */}
                     </>
                   )}
                   {(user?.role === "veterinarian" || user?.role === "admin") && (
                     <>
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenEdit(prescription)}
+                      >
                         Edit Prescription
                       </Button>
-                      <Button variant="outline" size="sm">
-                        Approve Refill
-                      </Button>
-                      <Button variant="outline" size="sm">
+                      {
+                        prescription.status === 'refill_needed' && (
+                          <Button variant="outline" size="sm"
+                            onClick={async () => {
+                              try {
+                                await updateReFill({ prescriptionId: prescription.id, status: 'refilled' });
+                              }
+                              catch (error) {
+                                console.log(error);
+                              }
+                            }}
+                          >
+                            Approve Refill
+                          </Button>
+                        )
+                      }
+                      {/* <Button variant="outline" size="sm">
                         Print Label
-                      </Button>
+                      </Button> */}
                     </>
                   )}
-                  <Button variant="outline" size="sm">
+                  {/* <Button variant="outline" size="sm">
                     View Details
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
             </CardContent>
@@ -626,6 +673,95 @@ export function Prescriptions() {
           </CardContent>
         </Card>
       )}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Prescription</DialogTitle>
+            <DialogDescription>Modify the prescription details</DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Pet */}
+            <div className="space-y-2">
+              <Label>Pet</Label>
+              <Select
+                value={String(editPrescriptionData?.id)}
+                onValueChange={(val) => setEditPrescriptionData(prev => ({ ...prev, pet_id: Number(val) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select pet" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pets?.map(pet => (
+                    <SelectItem key={pet.id} value={String(pet.id)}>{pet.name} ({pet.species})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Medication Name</Label>
+              <Input
+                value={editPrescriptionData?.medication_name}
+                onChange={e => setEditPrescriptionData(prev => ({ ...prev, medication_name: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Dosage</Label>
+              <Input
+                value={editPrescriptionData?.dosage}
+                onChange={e => setEditPrescriptionData(prev => ({ ...prev, dosage: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Frequency</Label>
+              <Select
+                value={editPrescriptionData?.frequency}
+                onValueChange={val => setEditPrescriptionData(prev => ({ ...prev, frequency: val }))}
+              >
+                <SelectTrigger><SelectValue placeholder="Select frequency" /></SelectTrigger>
+                <SelectContent>
+                  {frequencies.map(freq => <SelectItem key={freq} value={freq}>{freq}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Duration</Label>
+              <Input
+                value={editPrescriptionData?.duration}
+                onChange={e => setEditPrescriptionData(prev => ({ ...prev, duration: e.target.value }))}
+              />
+            </div>
+
+            <div className="col-span-2 space-y-2">
+              <Label>Instructions</Label>
+              <Textarea
+                value={editPrescriptionData?.instructions}
+                onChange={e => setEditPrescriptionData(prev => ({ ...prev, instructions: e.target.value }))}
+                rows={3}
+              />
+            </div>
+
+            <div className="col-span-2 space-y-2">
+              <Label>Side Effects</Label>
+              <Textarea
+                value={editPrescriptionData?.side_effects}
+                onChange={e => setEditPrescriptionData(prev => ({ ...prev, side_effects: e.target.value }))}
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveEdit} className="bg-blue-600 hover:bg-blue-700">Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

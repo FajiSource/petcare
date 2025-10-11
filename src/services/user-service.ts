@@ -153,3 +153,32 @@ export const updateStatus = async ({ userID, status }: { userID: string, status:
         };
     }
 };
+
+export const updateUser = async ({ userID, name, email ,password}: { userID: string, name: string, email: string ,password:string}) => {
+    try {
+        const res = await apiService.post(`/users/${userID}`, {
+            name: name,
+            email: email,
+            password:password
+        });
+        if (res.data.status === 'success') {
+            return {
+                success: true,
+                message: res.data.message || 'User updated successfully',
+                user: res.data.user
+            };
+        }
+        return {
+            success: false,
+            message: res.data.message || 'Failed to updated user',
+            user: null
+        };
+    } catch (error: any) {
+        console.error('Error updating user:', error);
+        return {
+            success: false,
+            message: error.message,
+            user: null
+        };
+    }
+};

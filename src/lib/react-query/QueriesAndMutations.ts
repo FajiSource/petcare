@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
 import { IAdminTotals, INewAppointment, INewClinic, INewHealthRecord, INewMedicalNote, INewPatient, INewPet, INewPrescription, INewUser, INewVaccination, INewVetUser, IPet, IPrescription, IRecentUser, ITopVet, IUserTrend, IVaccination } from "../types"
-import { addUser, addVetUser, deleteUser, getAllAdmins, getAllVets, getOwners, getUsers, updateStatus } from "../../services/user-service"
+import { addUser, addVetUser, deleteUser, getAllAdmins, getAllVets, getOwners, getUsers, updateStatus, updateUser } from "../../services/user-service"
 import { QUERY_KEYS } from "./queryKeys"
 import { getAdminTotals, getAppointmentAnalytics, getMonthlyAppoinments, getRecentUserRegistration, getTopPerformingClinics, getTopVets, getUserActivitySummary, getUserTrends, getVetTotals } from "../../services/analytics-service"
 import { addRecord, getAllVetRecords } from "../../services/veterinarian-services"
@@ -32,6 +32,19 @@ export const useAddNewVetUser = () => {
         }
     })
 }
+
+export const useUpdateUser = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ userID, name, email, password }: { userID: string, name: string, email: string, password: string }) => updateUser({ userID, name, email, password }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_ADMINS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_VETS] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_ALL_USERS] });
+        }
+    })
+}
+
 // admin reports
 export const useAdminDashboardTotals = () => {
     return useQuery<IAdminTotals>({
@@ -201,22 +214,22 @@ export const useUpdatePrescriptionReFill = () => {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: ({ prescriptionId, status }: { prescriptionId: number | string, status: 'refilled' | 'refill_needed' }) => updateReFill({ prescriptionId, status }),
-        onSuccess: () => { 
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VET_PRESCRIPTIONS] });
             queryClient.invalidateQueries({ queryKey: ['owner-prescriptions'] });
-        }    
+        }
     })
-} 
+}
 export const useUpdatePrescription = () => {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: ({ prescriptionId, data }: { prescriptionId: number | string, data:IPrescription }) => updatePrescription({ prescriptionId, data }),
-        onSuccess: () => { 
+        mutationFn: ({ prescriptionId, data }: { prescriptionId: number | string, data: IPrescription }) => updatePrescription({ prescriptionId, data }),
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GET_VET_PRESCRIPTIONS] });
             queryClient.invalidateQueries({ queryKey: ['owner-prescriptions'] });
-        }    
+        }
     })
-} 
+}
 
 export const useAddNewPrescription = () => {
     const queryClient = useQueryClient()
@@ -370,7 +383,7 @@ export const usePetOptions = () => {
     return useQuery({
         queryKey: ['pets-options'],
         queryFn: getPetSelections,
-        select: (data) => data? data : [],
+        select: (data) => data ? data : [],
         initialData: []
     });
 };
@@ -379,7 +392,7 @@ export const useVetOptions = () => {
     return useQuery({
         queryKey: ['vets-options'],
         queryFn: getVetsSelections,
-        select: (data) => data? data : [],
+        select: (data) => data ? data : [],
         initialData: []
     });
 };
@@ -388,7 +401,7 @@ export const useOwnerOptions = () => {
     return useQuery({
         queryKey: ['owner-options'],
         queryFn: getOwnersSelections,
-        select: (data) => data? data : [],
+        select: (data) => data ? data : [],
         initialData: []
     });
 };
@@ -397,7 +410,7 @@ export const useClinicOptions = () => {
     return useQuery({
         queryKey: [QUERY_KEYS.GET_CLINICS_OPTIONS],
         queryFn: getClinicsSelections,
-        select: (data) => data? data : [],
+        select: (data) => data ? data : [],
         initialData: []
     });
 };
@@ -408,7 +421,7 @@ export const useGetClinics = () => {
     return useQuery({
         queryKey: [QUERY_KEYS.GET_CLINICS],
         queryFn: getClinics,
-        select: (data) => data? data : [],
+        select: (data) => data ? data : [],
         initialData: []
     });
 };
@@ -578,7 +591,7 @@ export function useGetVetTotals() {
 export const useGetOwnerTotals = () => {
     return useQuery({
         queryKey: ['owner-totols'],
-        queryFn: getOwnerTotals, 
+        queryFn: getOwnerTotals,
         select: (data) => data ?? [],
         initialData: [],
     });

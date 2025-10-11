@@ -6,6 +6,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Database, Download, Save, Eye, EyeOff } from 'lucide-react';
 import { useUpdateUser } from '../../lib/react-query/QueriesAndMutations';
+import apiService from '../../services/api/apiService';
 
 export function SystemSettings() {
   const { user, login } = useApp();
@@ -49,27 +50,43 @@ export function SystemSettings() {
     }
   };
 
-  const handleCreateBackup = () => {
-    // In a real app this would call the backend to generate a full DB dump.
-    // For now create a minimal client-side backup for download.
-    const backup = {
-      timestamp: new Date().toISOString(),
-      createdBy: user?.id || 'system',
-      meta: {
-        note: 'Client-side mock backup - replace with real backup endpoint',
-      }
-    };
-    const dataStr = JSON.stringify(backup, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `petcare-backup-${new Date().toISOString()}.json`;
-    link.click();
-    setLastBackup(new Date().toLocaleString());
-  };
+  const handleCreateBackup = async () => {
+  try {
+    setError(null);
 
-  // Sync input state when user changes (e.g., after login)
+    const response = await apiService.get('/admin/backup', {
+      responseType: 'blob', // Important for file download
+    });
+
+    const blob = new Blob([response.data], { type: 'application/json' });
+    const downloadUrl = URL.createObjectURL(blob);
+
+    const contentDisposition = response.headers['content-disposition'];
+    let fileName = 'backup_' + new Date().toISOString() + '.json';
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?(.+)"?/);
+      if (match && match[1]) {
+        fileName = match[1];
+      }
+    }
+
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(downloadUrl);
+
+    setLastBackup(new Date().toLocaleString());
+  } catch (err: any) {
+    console.error(err);
+    setError(err?.message || 'Failed to create backup');
+  }
+};
+
+
   React.useEffect(() => {
     setName(user?.name || '');
     setEmail(user?.email || '');
@@ -145,7 +162,7 @@ export function SystemSettings() {
             <Database className="w-5 h-5" />
             Backup Database
           </CardTitle>
-          <CardDescription>Create a backup of system data (mock)</CardDescription>
+          <CardDescription>Create a backup of system data</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -163,7 +180,6 @@ export function SystemSettings() {
   );
 }
 
-// small placeholder component so we don't need to import additional icons
 function UsersPlaceholder() {
   return (
     <div className="w-5 h-5 bg-gray-200 rounded-full" aria-hidden />
